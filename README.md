@@ -200,3 +200,72 @@ public class ExampleServerLobby : ServerScope<ExamplePeer, ExampleClientLobby>
 	}
 }
 ```
+
+Serialization
+-------------
+Primitive types are automatically serialized:
+int,short,float,double,... (anything NetworkWriter/Reader can serialize)
+
+Object types are automatically serialized:
+string, Array (any serializable type)
+
+Custom classes can also be serialized by using the [NetworkSerialization] attribute and supplying the type of serialization needed. In the following example, the flag NetworkSerializeSettings.AllFieldsAndProperties sets all fields and properties to be serialized when this object is sent to a Signal method.
+```
+[NetworkSerialization(NetworkSerializeSettings.AllFieldsAndProperties)]
+public class ExampleObject
+{
+	public int num = 0;
+	public string str = "";
+	public float flt = 0;
+
+	[NetworkNonSerialized]
+	public int numNonSerialized = 0;
+}
+```
+
+There are a number of possible settings for NetworkSerialization:
+
+```
+	public enum NetworkSerializeSettings
+	{
+		PublicFieldsOnly,
+		PublicFieldsAndProperties,
+		AllFields,
+		AllFieldsAndProperties,
+		OptIn,				// only serialize members with [NetworkSerialize]
+		Custom,				// use custom serializer/deserializer
+	}
+```
+
+The attribute [NetworkNonSerialized] may be used to exclude a field or property from being serialized.
+The attribute [NetworkSerialized] may be used to include a field or property when serializing an object (typycally with the NetworkSerializeSettings.OptIn flag).
+
+When using NetworkSerializeSettings.Custom, the compiler will check for the serializer/deserializer methods defined within the class, defined like the following:
+
+```
+[NetworkSerialization(NetworkSerializeSettings.Custom)]
+public class ExampleObject
+{
+	public int num = 0;
+	public string str = "";
+	public float flt = 0;
+
+	//[NetworkNonSerialized] // this isn't really needed with Custom serialization
+	public int numNonSerialized = 0;
+	
+	public static void NetworkSerialize(ExampleObject obj, NetworkWriter writer)
+	{
+		writer.Write(obj.num);
+		writer.Write(obj.str);
+		writer.Write(obj.flt);
+	}
+
+	public static void NetworkDeserialize(ExampleObject obj, NetworkReader reader)
+	{
+		obj.num = reader.ReadInt32();
+		obj.str = reader.ReadString();
+		obj.flt = reader.ReadSingle();
+	}
+}
+```
+
