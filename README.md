@@ -1,8 +1,8 @@
 NetworkScopes for Unity
 =======================
 NetworkScopes is a powerful and lightweight Networking library for Unity built on UNet LLAPI focused on two things:
-- Delivering great performance while utilizing minimal bandwidth use.
-- Allowing clean, strong-typed network code.
+- Delivering great performance while using the minimum bandwidth.
+- Allowing clean, oraganized and strong-typed network code.
 
 Features
 --------
@@ -156,6 +156,7 @@ Scope Events
 ------------
 You may override the ClientScope's <b>OnEnterScope/OnExitScope</b> to insert any custom logic on the client. Consider the following client-side authenticator that automatically send credentials upon entering:
 
+```
 public class ExampleClientAuthenticator : ClientScope<ExamplePeer,ExampleServerAuthenticator>
 {
 	protected override void OnEnterScope ()
@@ -164,6 +165,7 @@ public class ExampleClientAuthenticator : ClientScope<ExamplePeer,ExampleServerA
 		Server.Authenticate("sour", "testpw");
 	}
 }
+```
 
 It's also possible to override the ServerScope's <b>OnPeerEnteredScope/OnPeerExitedScope</b> on the server. It is called for every Peer that is added or removed from the Scope. 
 
