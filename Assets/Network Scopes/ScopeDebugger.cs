@@ -3,7 +3,7 @@ using UnityEngine.Networking;
 using System.Text;
 
 
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
 	using System;
 	using UnityEditor;
@@ -193,7 +193,7 @@ namespace NetworkScopes
 		{
 			int signalType = reader.ReadInt32();
 
-			MethodInfo method = scope.GetType().GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public).FirstOrDefault(m => m.Name.GetHashCode() == signalType);
+			MethodInfo method = scope.GetType().GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public).FirstOrDefault(m => m.Name.GetConsistentHashCode() == signalType);
 
 			ScopeEvents ev = GetOrCreateScopeEvent(scope);
 
@@ -212,7 +212,7 @@ namespace NetworkScopes
 
 			int signalType = reader.ReadInt32();
 
-			MethodInfo method = outgoingScopeType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public).FirstOrDefault(m => m.Name.GetHashCode() == signalType);
+			MethodInfo method = outgoingScopeType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public).FirstOrDefault(m => m.Name.GetConsistentHashCode() == signalType);
 
 			if (method == null)
 				Debug.Log("Could not find method with sigType " + signalType);

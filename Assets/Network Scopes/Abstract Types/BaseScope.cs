@@ -1,19 +1,12 @@
 
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
-	using UnityEngine;
-	using UnityEngine.Networking;
-	using System.Collections.Generic;
-	using System.Collections;
-	using System.IO;
-	using System.Linq;
 	using System;
-	using System.Reflection;
-
+	using System.Collections.Generic;
 
 	public abstract class BaseScope
 	{
-		public short msgType { get; protected set; }
+		public short scopeChannel { get; protected set; }
 		public byte scopeIdentifier { get; protected set; }
 
 		private Type cachedType;
@@ -55,7 +48,7 @@ namespace NetworkScopes
 			scopeIdentifier = identifier;
 		}
 
-		public void ProcessMessage (NetworkMessage msg)
+		public void ProcessMessage (IMessageReader msgReader)
 		{
 			#if UNITY_EDITOR && SCOPE_DEBUGGING
 			// log incoming signal
@@ -67,12 +60,12 @@ namespace NetworkScopes
 			// if not pause, invoke the signal immediately
 			if (!_isPaused)
 			{
-				MethodBindingCache.Invoke(this, cachedType, msg.reader);
+				MethodBindingCache.Invoke(this, cachedType, msgReader);
 			}
 			// if paused, enqueue paused signal for later processing
 			else
 			{
-				SignalInvocation inv = MethodBindingCache.GetMessageInvocation(cachedType, msg.reader);
+				SignalInvocation inv = MethodBindingCache.GetMessageInvocation(cachedType, msgReader);
 				pausedMessages.Enqueue(inv);
 			}
 		}

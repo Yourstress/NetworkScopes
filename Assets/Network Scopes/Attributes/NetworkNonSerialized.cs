@@ -1,5 +1,5 @@
 
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
 	using System;
 

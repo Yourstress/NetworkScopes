@@ -1,18 +1,16 @@
 ﻿
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
 	using System;
 	using System.Collections.Generic;
-	using UnityEngine;
-	using UnityEngine.Networking;
 
 	public abstract class BaseServerScope<TPeer> : BaseScope, IDisposable where TPeer : NetworkPeer
 	{
-		public MasterServer<TPeer> Master { get; private set; }
+		public BaseServer<TPeer> Master { get; private set; }
 
 		public List<TPeer> Peers { get; private set; }
 
-		public virtual void Initialize(MasterServer<TPeer> server)
+		public virtual void Initialize(BaseServer<TPeer> server)
 		{
 			// keep a reference for future use
 			Master = server;
@@ -24,45 +22,44 @@ namespace NetworkScopes
 		}
 
 		#region MsgType Registration
-		private ShortGenerator msgTypeGenerator;
+		private ShortGenerator scopeChannelProvider;
 
-		public void SetManualMsgType(byte scopeIdentifier, ShortGenerator msgTypeGen, short manualMsgType)
+		public void SetManualMsgType(byte scopeIdentifier, ShortGenerator channelProvider, short manualScopeChannel)
 		{
-			if (msgTypeGenerator != null)
+			if (scopeChannelProvider != null)
 				throw new Exception(string.Format("The Scope {0} has already been assigned a MsgType value", GetType()));
 
 			this.scopeIdentifier = scopeIdentifier;
 			
 			// use up the value manually in the generator
-			msgTypeGen.AllocateManualValue(manualMsgType);
+			channelProvider.AllocateManualValue(manualScopeChannel);
 
-			msgType = manualMsgType;
-			msgTypeGenerator = msgTypeGen;
+			scopeChannel = manualScopeChannel;
+			scopeChannelProvider = channelProvider;
+
+			Master.RegisterScopeHandler(scopeChannel, ProcessPeerMessage);
 		}
 
 		public void SetAutomaticMsgType(byte scopeIdentifier, ShortGenerator msgTypeGen)
 		{
-			if (msgTypeGenerator != null)
+			if (scopeChannelProvider != null)
 				throw new Exception(string.Format("The Scope {0} has already been assigned a MsgType value", GetType()));
 
 			this.scopeIdentifier = scopeIdentifier;
 			
-			msgType = msgTypeGen.AllocateValue();
-			msgTypeGenerator = msgTypeGen;
+			scopeChannel = msgTypeGen.AllocateValue();
+			scopeChannelProvider = msgTypeGen;
 
 			// register with the Server's Scope msgType
-			NetworkServer.RegisterHandler(msgType, ProcessPeerMessage);
+			Master.RegisterScopeHandler(scopeChannel, ProcessPeerMessage);
 		}
 		#endregion
 
 		#region IDisposable implementation
 		public void Dispose ()
 		{
-			msgTypeGenerator.DeallocateValue(msgType);
-			msgTypeGenerator = null;
-
-			// attempt to unregister the message
-			NetworkServer.UnregisterHandler(msgType);
+			scopeChannelProvider.DeallocateValue(scopeChannel);
+			scopeChannelProvider = null;
 
 			// dispose of this to get rid of cycle reference
 			Master = null;
@@ -83,7 +80,6 @@ namespace NetworkScopes
 		/// <param name="peer">The target Peer.</param>
 		public void AddPeer(TPeer peer, bool sendEnterMsg)
 		{
-//			UnityEngine.Debug.LogFormat("<color=cyan>ADDING {0}</color> to {1}", peer, GetType().Name);
 			Peers.Add(peer);
 
 			// register for disconnection to clean up after this peer
@@ -111,7 +107,7 @@ namespace NetworkScopes
 				OnPeerExitedScope(peer);
 			}
 			else
-				Debug.LogFormat("Failed to remove non-existent peer {0} from scope {1}", peer.ToString(), GetType().Name);
+				ScopeUtils.Log("Failed to remove non-existent peer {0} from scope {1}", peer.ToString(), GetType().Name);
 		}
 			
 		protected virtual void OnPeerDisconnected (NetworkPeer peer)
@@ -187,22 +183,20 @@ namespace NetworkScopes
 			IsTargetGroup = true;
 		}
 
-		public void ProcessPeerMessage(NetworkMessage msg)
+		public void ProcessPeerMessage(IMessageReader reader, TPeer sender)
 		{
-			TPeer peer = (TPeer)msg.conn;
-
 			// ignore messages from unregistered users
-			if (!Peers.Contains(peer))
+			if (!Peers.Contains(sender))
 				return;
 
 			// set the sender peer
-			SenderPeer = peer;
+			SenderPeer = sender;
 
 			// set the next signal target to this peer by default (reply-style)
-			SetTargetPeer(peer);
+			SetTargetPeer(sender);
 
 			// process the message
-			ProcessMessage(msg);
+			ProcessMessage(reader);
 		}
 	}
 }

@@ -1,34 +1,29 @@
 
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
-	using System;
-	using System.Collections.Generic;
-	using UnityEngine;
-	using UnityEngine.Networking;
-
 	public abstract class ServerScope<TPeer> : BaseServerScope<TPeer>, INetworkSender where TPeer : NetworkPeer
 	{
-		NetworkWriter INetworkSender.CreateWriter(int signalType)
+		IMessageWriter INetworkSender.CreateWriter(int signalType)
 		{
-			NetworkWriter writer = new NetworkWriter();
-			writer.StartMessage(msgType);
+			IMessageWriter writer = Master.CreateWriter(ScopeMsgType.ScopeSignal);
+			writer.Write(scopeChannel);
 			writer.Write(signalType);
 			return writer;
 		}
 
-		void INetworkSender.PrepareAndSendWriter(NetworkWriter writer)
+		void INetworkSender.PrepareAndSendWriter(IMessageWriter writer)
 		{
-			writer.FinishMessage();
-
 			#if UNITY_EDITOR && SCOPE_DEBUGGING
 			// log outgoing signal
 			ScopeDebugger.AddOutgoingSignal (this, typeof(TClientScope), new NetworkReader (writer));
 			#endif
 
 			if (!IsTargetGroup)
-				ScopeUtils.SendNetworkWriter(writer, TargetPeer);
+				Master.SendWriter(writer, TargetPeer);
 			else
-				ScopeUtils.SendNetworkWriter(writer, TargetPeerGroup);
+			{
+				Master.SendWriter(writer, TargetPeerGroup);
+			}
 		}
 	}
 }

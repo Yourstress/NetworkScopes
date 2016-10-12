@@ -1,5 +1,5 @@
 ﻿
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
 	public delegate void NetworkSingleEvent();
 	public delegate void NetworkSingleEvent<T>(T arg);

@@ -1,29 +1,25 @@
 ﻿
-//#define NS_DEBUG_SCOPE_ACTIVITY
+#define NS_DEBUG_SCOPE_ACTIVITY
 
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
 	using System;
-	using UnityEngine.Networking;
 
 	public abstract class BaseClientScope : BaseScope, IDisposable
 	{
-		protected NetworkClient client;
-
-		public MasterClient MasterClient { get; private set; }
+		public BaseClient Client { get; private set; }
 
 		public bool IsActive { get; private set; }
 		public bool FlushScopeEventsOnDispose = true;
 
-		public void Initialize(short scopeMsgType, NetworkClient currentClient, MasterClient masterClient)
+		public void Initialize(short scopeMsgType, BaseClient client)
 		{
-			msgType = scopeMsgType;
+			scopeChannel = scopeMsgType;
 
-			client = currentClient;
-			MasterClient = masterClient;
+			Client = client;
 
 			// register with the Client's Scope msgType
-			client.RegisterHandler(msgType, ProcessMessage);
+			Client.RegisterScopeHandler(scopeChannel, ProcessMessage);
 
 			base.Initialize();
 		}
@@ -32,9 +28,7 @@ namespace NetworkScopes
 		public virtual void Dispose ()
 		{
 			// unregister the msgType from the client
-			client.UnregisterHandler(msgType);
-
-			client = null;
+			Client.UnregisterScopeHandler(scopeChannel);
 
 			if (FlushScopeEventsOnDispose)
 			{
@@ -49,7 +43,7 @@ namespace NetworkScopes
 			IsActive = true;
 			
 			#if NS_DEBUG_SCOPE_ACTIVITY
-			UnityEngine.Debug.LogFormat("<color=green>Entered</color> Scope <color=white>{0}</color>", GetType().Name);
+			ScopeUtils.Log("<color=green>Entered</color> Scope <color=white>{0}</color>", GetType().Name);
 			#endif
 
 			#if UNITY_EDITOR && SCOPE_DEBUGGING
@@ -64,7 +58,7 @@ namespace NetworkScopes
 		public void ExitScope()
 		{
 			#if NS_DEBUG_SCOPE_ACTIVITY
-			UnityEngine.Debug.LogFormat("<color=red>Exited</color> Scope <color=white>{0}</color>", GetType().Name);
+			ScopeUtils.Log("<color=red>Exited</color> Scope <color=white>{0}</color>", GetType().Name);
 			#endif
 
 			#if UNITY_EDITOR && SCOPE_DEBUGGING

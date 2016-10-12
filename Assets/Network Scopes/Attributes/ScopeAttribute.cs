@@ -1,11 +1,15 @@
 ﻿
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
 	using System;
+
+	#if UNITY_5_3_OR_NEWER 
 	using System.Reflection;
 	using CodeGeneration;
-
 	public class ScopeAttribute : InjectAttribute
+	#else
+	public class ScopeAttribute : Attribute
+	#endif
 	{
 		Type remoteType;
 
@@ -13,7 +17,7 @@ namespace NetworkScopes
 		{
 			this.remoteType = remoteType;
 		}
-
+		#if UNITY_5_3_OR_NEWER
 		public override void ProcessClass(Type classType, ClassDefinition classDef)
 		{
 			MethodInfo[] remoteMethods = remoteType.GetMethods();
@@ -26,7 +30,6 @@ namespace NetworkScopes
 					
 				fakeRemoteClass.imports.Add("System.Collections.Generic");
 				fakeRemoteClass.imports.Add("NetworkScopes");
-				fakeRemoteClass.imports.Add("UnityEngine.Networking");
 				
 				// add interface sender field
 				fakeRemoteClass.AddField("_netSender", "INetworkSender", false);
@@ -167,7 +170,7 @@ namespace NetworkScopes
 
 			// create writer variable
 //			fakeMethodDef.instructions.AddVariableInstruction("writer", NetworkReflector.writerType, NetworkReflector.writerCtor);
-			fakeMethodDef.instructions.AddInstruction("NetworkWriter writer = _netSender.CreateWriter({0});", remoteMethod.Name.GetHashCode());
+			fakeMethodDef.instructions.AddInstruction("IMessageWriter writer = _netSender.CreateWriter({0});", remoteMethod.Name.GetConsistentHashCode());
 
 			ParameterInfo[] paramInfos = remoteMethod.GetParameters();
 
@@ -238,7 +241,7 @@ namespace NetworkScopes
 			}
 
 			// can't find serializer? exit out
-			UnityEngine.Debug.LogWarningFormat("Could not find a serializer for the type '{0}'", elementType.FullName);
+			ScopeUtils.Log("Could not find a serializer for the type '{0}'", elementType.FullName);
 
 			return false;
 		}
@@ -310,7 +313,7 @@ namespace NetworkScopes
 			}
 
 			// can't find serializer? exit out
-			UnityEngine.Debug.LogWarningFormat("Could not find a deserializer for the type '{0}'", elementType.FullName);
+			ScopeUtils.Log("Could not find a deserializer for the type '{0}'", elementType.FullName);
 
 			return false;
 		}
@@ -338,7 +341,7 @@ namespace NetworkScopes
 					MethodDefinition serializerMethod = new MethodDefinition("NetworkSerialize");
 					serializerMethod.IsStatic = true;
 					serializerMethod.parameters.Add(new ParameterDefinition("value", paramType));
-					serializerMethod.parameters.Add(new ParameterDefinition("writer", typeof(UnityEngine.Networking.NetworkWriter)));
+					serializerMethod.parameters.Add(new ParameterDefinition("writer", typeof(IMessageWriter)));
 
 					serializerClassDef.methods.Add(serializerMethod);
 
@@ -361,7 +364,7 @@ namespace NetworkScopes
 					MethodDefinition serializerMethod = new MethodDefinition("NetworkDeserialize");
 					serializerMethod.IsStatic = true;
 					serializerMethod.parameters.Add(new ParameterDefinition("value", paramType));
-					serializerMethod.parameters.Add(new ParameterDefinition("reader", typeof(UnityEngine.Networking.NetworkReader)));
+					serializerMethod.parameters.Add(new ParameterDefinition("reader", typeof(IMessageReader)));
 
 					serializerClassDef.methods.Add(serializerMethod);
 
@@ -384,5 +387,6 @@ namespace NetworkScopes
 
 			return null;
 		}
+		#endif
 	}
 }

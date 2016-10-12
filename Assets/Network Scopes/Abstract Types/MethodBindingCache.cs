@@ -1,12 +1,10 @@
-using UnityEngine.Networking;
 
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
-	using UnityEngine;
 	using System;
-	using System.Linq;
 	using System.Reflection;
 	using System.Collections.Generic;
+	using System.Linq;
 
 	public class SignalInvocation
 	{
@@ -27,11 +25,11 @@ namespace NetworkScopes
 			catch (Exception e)
 			{
 				if (method != null)
-					Debug.LogErrorFormat("Failed to call method {0}.{1}", method.DeclaringType.Name, method.Name);
+					ScopeUtils.LogWarning("Failed to call method {0}.{1}", method.DeclaringType.Name, method.Name);
 				else
-					Debug.LogErrorFormat("Failed to call unbound method in {0}", rootObject.GetType().Name);
+					ScopeUtils.LogWarning("Failed to call unbound method in {0}", rootObject.GetType().Name);
 
-				Debug.LogException(e);
+				ScopeUtils.LogException(e);
 			}
 		}
 	}
@@ -56,11 +54,11 @@ namespace NetworkScopes
 					// if no method was found, don't create the delegate
 					if (recvMethod == null)
 					{
-						Debug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, scopeType.Name);
+						ScopeUtils.LogError("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, scopeType.Name);
 						continue;
 					}
 
-					Add(field.Name.GetHashCode(), recvMethod);
+					Add(field.Name.GetConsistentHashCode(), recvMethod);
 				}
 
 				foreach (MethodInfo method in methods)
@@ -76,7 +74,7 @@ namespace NetworkScopes
 					if (recvMethod == null)
 						continue;
 
-					Add(method.Name.GetHashCode(), recvMethod);
+					Add(method.Name.GetConsistentHashCode(), recvMethod);
 				}
 			}
 		}
@@ -91,7 +89,7 @@ namespace NetworkScopes
 			}
 		}
 
-		public static SignalInvocation GetMessageInvocation(Type scopeType, NetworkReader reader)
+		public static SignalInvocation GetMessageInvocation(Type scopeType, IMessageReader reader)
 		{
 			int signalType = reader.ReadInt32();
 
@@ -103,9 +101,10 @@ namespace NetworkScopes
 			return invocation;
 		}
 
-		public static void Invoke(object rootObject, Type scopeType, NetworkReader reader)
+		public static void Invoke(object rootObject, Type scopeType, IMessageReader reader)
 		{
 			int signalType = reader.ReadInt32();
+
 			MethodInfo method = GetMethod(scopeType, signalType);
 
 			SignalInvocation.Invoke(rootObject, method, new object[] { reader });
@@ -119,7 +118,7 @@ namespace NetworkScopes
 
 			if (!deserializer.TryGetValue(signalType, out method))
 			{
-				Debug.LogErrorFormat("Could not find method with signal type {0} in {1}", signalType, scopeType.Name);
+				ScopeUtils.LogError("Could not find method with signal type {0} in {1}", signalType, scopeType.Name);
 			}
 
 

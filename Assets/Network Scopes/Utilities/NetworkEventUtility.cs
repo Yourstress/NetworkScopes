@@ -1,8 +1,6 @@
 ﻿
-namespace NetworkScopes
+namespace NetworkScopesV2
 {
-	using System;
-
 	public static class NetworkEventUtility
 	{
 		private static string[] eventTypeNames = new string[]
