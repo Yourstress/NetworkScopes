@@ -6,13 +6,9 @@ namespace NetworkScopes
 	using UnityEngine;
 	using UnityEngine.Networking;
 
-	public abstract class ServerScope<TPeer, TClientScope> : BaseServerScope<TPeer> where TPeer : IScopePeer where TClientScope : BaseClientScope
+	public abstract class ServerScope<TPeer> : BaseServerScope<TPeer>, INetworkSender where TPeer : NetworkPeer
 	{
-		// used to strong-type Network calls and inject network message sends at post-compile time
-		[NonSerialized]
-		public TClientScope Client;
-
-		protected NetworkWriter CreateWriter(int signalType)
+		NetworkWriter INetworkSender.CreateWriter(int signalType)
 		{
 			NetworkWriter writer = new NetworkWriter();
 			writer.StartMessage(msgType);
@@ -20,20 +16,19 @@ namespace NetworkScopes
 			return writer;
 		}
 
-		protected void PrepareAndSendWriter(NetworkWriter writer)
+		void INetworkSender.PrepareAndSendWriter(NetworkWriter writer)
 		{
 			writer.FinishMessage();
 
+			#if UNITY_EDITOR && SCOPE_DEBUGGING
+			// log outgoing signal
+			ScopeDebugger.AddOutgoingSignal (this, typeof(TClientScope), new NetworkReader (writer));
+			#endif
+
 			if (!IsTargetGroup)
-				TargetPeer.connection.SendWriter(writer, 0);
+				ScopeUtils.SendNetworkWriter(writer, TargetPeer);
 			else
-			{
-				foreach (TPeer peer in TargetPeerGroup)
-				{
-					peer.connection.SendWriter(writer, 0);
-				}
-			}
+				ScopeUtils.SendNetworkWriter(writer, TargetPeerGroup);
 		}
 	}
-
 }

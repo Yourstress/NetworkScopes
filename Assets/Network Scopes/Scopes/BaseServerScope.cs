@@ -1,4 +1,4 @@
-
+﻿
 namespace NetworkScopes
 {
 	using System;
@@ -6,14 +6,18 @@ namespace NetworkScopes
 	using UnityEngine;
 	using UnityEngine.Networking;
 
-	public abstract class BaseServerScope<TPeer> : BaseScope, IDisposable where TPeer : IScopePeer
+	public abstract class BaseServerScope<TPeer> : BaseScope, IDisposable where TPeer : NetworkPeer
 	{
 		public MasterServer<TPeer> Master { get; private set; }
+
+		public List<TPeer> Peers { get; private set; }
 
 		public virtual void Initialize(MasterServer<TPeer> server)
 		{
 			// keep a reference for future use
 			Master = server;
+
+			Peers = new List<TPeer>();
 
 			// initialize BaseScope
 			Initialize();
@@ -65,46 +69,54 @@ namespace NetworkScopes
 		}
 		#endregion
 
-		private void SetTargetPeer(IScopePeer targetPeer)
+		private void SetTargetPeer(TPeer targetPeer)
 		{
-			_targetPeer = (TPeer)targetPeer;
+			_targetPeer = targetPeer;
 			_targetPeerGroup = null;
 			IsTargetGroup = false;
 		}
-
-		protected Dictionary<NetworkConnection,TPeer> Peers = new Dictionary<NetworkConnection, TPeer>();
 
 		/// <summary>
 		/// Adds the Peer to the Scope, allowing Signal communication with the Client.
 		/// NOTE: Sends an EnterScope message to the Peer.
 		/// </summary>
 		/// <param name="peer">The target Peer.</param>
-		public void AddPeer(TPeer peer)
+		public void AddPeer(TPeer peer, bool sendEnterMsg)
 		{
-			Peers[peer.connection] = peer;
+//			UnityEngine.Debug.LogFormat("<color=cyan>ADDING {0}</color> to {1}", peer, GetType().Name);
+			Peers.Add(peer);
 
-			ScopeUtils.SendScopeEnteredMessage(this, peer.connection);
+			// register for disconnection to clean up after this peer
+			peer.OnDisconnect += OnPeerDisconnected;
+
+			if (sendEnterMsg)
+				ScopeUtils.SendScopeEnteredMessage(this, peer);
 
 			// notify derived class that the peer has entered the scope and is able to receive Signals from the client
 			OnPeerEnteredScope(peer);
-
-			// register the RemovePeer method with the peer disconnect event to clean up the scope after a peer disconnects
-			Master.OnPeerDisconnected += RemovePeer;
 		}
 
-		public void RemovePeer(TPeer peer)
+		public void RemovePeer(TPeer peer, bool sendExitMsg)
 		{
-			// we don't need to know when
-			Master.OnPeerDisconnected -= RemovePeer;
+			// we don't care about d/c events from this peer anymore
+			peer.OnDisconnect -= OnPeerDisconnected;
 
 			// attempt to remove the peer associated with the peer's connection
-			if (Peers.Remove(peer.connection))
+			if (Peers.Remove(peer))
 			{
-				ScopeUtils.SendScopeExitedMessage(this, peer.connection);
+				if (sendExitMsg && peer.isConnected)
+					ScopeUtils.SendScopeExitedMessage(this, peer);
 
 				// notify derived class that the peer has exited the scope and can no longer receive Signals from the client
 				OnPeerExitedScope(peer);
 			}
+			else
+				Debug.LogFormat("Failed to remove non-existent peer {0} from scope {1}", peer.ToString(), GetType().Name);
+		}
+			
+		protected virtual void OnPeerDisconnected (NetworkPeer peer)
+		{
+			RemovePeer((TPeer)peer, peer.sendExitScopeMsgOnDisconnect);
 		}
 
 		/// <summary>
@@ -114,11 +126,25 @@ namespace NetworkScopes
 		/// <param name="targetScope">The Scope to handover the Peer to.</param>
 		public void HandoverPeer(TPeer peer, BaseServerScope<TPeer> targetScope)
 		{
+			// tell the peer about this handover
+			ScopeUtils.SendScopeSwitchedMessage(this, targetScope, peer);
+
 			// remove peer from this scope
-			RemovePeer(peer);
+			RemovePeer(peer, false);
 
 			// add peer to target scope
-			targetScope.AddPeer(peer);
+			targetScope.AddPeer(peer, false);
+		}
+		
+		public void RedirectPeer(TPeer peer, string hostname, int port)
+		{
+			Master.RedirectPeer(peer, hostname, port);
+		}
+
+		public void RedirectPeers(IEnumerable<TPeer> peers, string hostname, int port)
+		{
+			foreach (TPeer peer in peers)
+				peer.Redirect(hostname, port);
 		}
 
 		protected virtual void OnPeerEnteredScope(TPeer peer)
@@ -128,13 +154,13 @@ namespace NetworkScopes
 		protected virtual void OnPeerExitedScope(TPeer peer)
 		{
 		}
+		
+		public TPeer SenderPeer { get; private set; }
 
 		public bool IsTargetGroup { get; private set; }
 
 		private TPeer _targetPeer;
 		private IEnumerable<TPeer> _targetPeerGroup;
-
-		public TPeer SenderPeer { get; private set; }
 
 		/// <summary>
 		/// The desired peer to send the Signal to. By default, it is the sender of the last Signal.
@@ -156,7 +182,6 @@ namespace NetworkScopes
 
 		private void SetTargetPeerGroup(IEnumerable<TPeer> targetPeerGroup)
 		{
-			// set target peer for future outgoing Signal calls
 			_targetPeer = default(TPeer);
 			_targetPeerGroup = targetPeerGroup;
 			IsTargetGroup = true;
@@ -164,21 +189,20 @@ namespace NetworkScopes
 
 		public void ProcessPeerMessage(NetworkMessage msg)
 		{
-			TPeer peer;
+			TPeer peer = (TPeer)msg.conn;
 
 			// ignore messages from unregistered users
-			if (!Peers.TryGetValue(msg.conn, out peer))
+			if (!Peers.Contains(peer))
 				return;
 
-			// assign sender peer before calling the incoming Signal method
+			// set the sender peer
 			SenderPeer = peer;
 
-			// set next outgoing message target to the sender peer
+			// set the next signal target to this peer by default (reply-style)
 			SetTargetPeer(peer);
 
 			// process the message
 			ProcessMessage(msg);
 		}
-
 	}
 }

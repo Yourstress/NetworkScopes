@@ -6,10 +6,14 @@ namespace NetworkScopes
 	using UnityEngine.Networking;
 	using System.Collections.Generic;
 
-	public abstract class ClientScope<TServerPeer, TServerScope> : BaseClientScope where TServerScope : BaseServerScope<TServerPeer> where TServerPeer : IScopePeer
+	public interface INetworkSender
 	{
-		public TServerScope Server;
+		NetworkWriter CreateWriter(int signalType);
+		void PrepareAndSendWriter(NetworkWriter writer);
+	}
 
+	public abstract class ClientScope : BaseClientScope, INetworkSender
+	{
 		#region Signal Queuing
 		private bool _signalQueueEnabled = false;
 		private Queue<NetworkWriter> queuedSignalWriters = null;
@@ -32,6 +36,8 @@ namespace NetworkScopes
 
 		protected override void OnEnterScope ()
 		{
+			IsPaused = false;
+
 			// right after entering the scope, send out all queued signals
 			while (_signalQueueEnabled && queuedSignalWriters.Count > 0)
 			{
@@ -44,13 +50,13 @@ namespace NetworkScopes
 				// replace the bytes within the internal array
 				Buffer.BlockCopy(msgTypeBytes, 0, writerBytes, 2, sizeof(short));
 
-				PrepareAndSendWriter(writer);
+				((INetworkSender)this).PrepareAndSendWriter(writer);
 			}
 
 			base.OnEnterScope ();
 		}
 
-		protected NetworkWriter CreateWriter(int signalType)
+		NetworkWriter INetworkSender.CreateWriter(int signalType)
 		{
 			NetworkWriter writer = new NetworkWriter();
 
@@ -59,13 +65,23 @@ namespace NetworkScopes
 			return writer;
 		}
 
-		protected void PrepareAndSendWriter(NetworkWriter writer)
+		void INetworkSender.PrepareAndSendWriter(NetworkWriter writer)
 		{
 			// only send the writer if the Scope is active
 			if (IsActive)
 			{
 				writer.FinishMessage();
-				client.connection.SendWriter(writer, 0);
+
+				#if UNITY_EDITOR && SCOPE_DEBUGGING
+				// log outgoing signal
+				ScopeDebugger.AddOutgoingSignal (this, typeof(TServerScope), new NetworkReader (writer.ToArray ()));
+				#endif
+
+				byte error;
+				NetworkTransport.Send(client.connection.hostId, client.connection.connectionId, 0, writer.ToArray(), writer.Position, out error);
+
+				if ((NetworkError)error != NetworkError.Ok)
+					UnityEngine.Debug.LogError((NetworkError)error);
 			}
 			// otherwise, ignore or queue the Signal for later
 			else
@@ -75,7 +91,7 @@ namespace NetworkScopes
 					queuedSignalWriters.Enqueue(writer);
 				// otherwise, just display a warning message
 				else
-					UnityEngine.Debug.LogWarning("Ignoring Signal sending because the Scope <color=white>{0}</color> is no longer active");
+					UnityEngine.Debug.LogWarningFormat("Ignoring Signal sending because the Scope <color=white>{0}</color> is no longer active", GetType().Name);
 			}
 		}
 	}

@@ -10,25 +10,44 @@ namespace NetworkScopes
 	using System;
 	using System.Reflection;
 
+
 	public abstract class BaseScope
 	{
-		protected bool isInitialized { get; private set; }
-
 		public short msgType { get; protected set; }
 		public byte scopeIdentifier { get; protected set; }
 
-		public delegate void ScopeDeserializerDelegate(NetworkReader reader);
+		private Type cachedType;
 
-		private Dictionary<int,MethodInfo> cachedDeserializers = null;
+		private bool _isPaused = false;
+		private Queue<SignalInvocation> pausedMessages = null;
+
+		public bool IsPaused
+		{
+			get { return _isPaused; }
+			set
+			{
+				if (_isPaused == value)
+					return;
+				
+				_isPaused = value;
+
+				// initialize list when pausing is enabled
+				if (_isPaused && pausedMessages == null)
+					pausedMessages = new Queue<SignalInvocation>(10);
+				
+				// while unpaused, process messages in the queue
+				while (!_isPaused && pausedMessages.Count > 0)
+				{
+					SignalInvocation pausedInv = pausedMessages.Dequeue();
+					pausedInv.Invoke(this);
+				}
+			}
+		}
 
 		protected void Initialize()
 		{
-			if (!isInitialized)
-			{
-				BindReceiveMethods();
-
-				isInitialized = true;
-			}
+			cachedType = GetType();
+			MethodBindingCache.BindScope(cachedType);
 		}
 
 		public void SetScopeIdentifier(byte identifier)
@@ -38,66 +57,23 @@ namespace NetworkScopes
 
 		public void ProcessMessage (NetworkMessage msg)
 		{
-			int signalType = msg.reader.ReadInt32();
+			#if UNITY_EDITOR && SCOPE_DEBUGGING
+			// log incoming signal
+			ScopeDebugger.AddIncomingSignal (this, msg.reader);
 
-			try
+			msg.reader.SeekZero();
+			#endif
+
+			// if not pause, invoke the signal immediately
+			if (!_isPaused)
 			{
-				cachedDeserializers[signalType].Invoke(this, new object[] { msg.reader });
+				MethodBindingCache.Invoke(this, cachedType, msg.reader);
 			}
-			catch (Exception e)
+			// if paused, enqueue paused signal for later processing
+			else
 			{
-				Debug.LogErrorFormat("Failed to call method with hash {0} in {1}", signalType, GetType().Name);
-				Debug.LogException(e);
-			}
-		}
-
-		private void BindReceiveMethods()
-		{
-			cachedDeserializers = new Dictionary<int, MethodInfo>();
-
-			Type t = GetType();
-
-			List<MethodInfo> methods = t.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).Where(m => !m.IsSpecialName).ToList();
-
-			List<FieldInfo> eventFields = t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(f =>
-				{
-					return NetworkEventUtility.IsEventType(f.FieldType.Name);
-				}).ToList();
-
-			foreach (FieldInfo field in eventFields)
-			{
-				MethodInfo recvMethod = methods.Find(m => m.Name == string.Format("Receive_{0}", field.Name));
-
-				// if no method was found, don't create the delegate
-				if (recvMethod == null)
-				{
-					Debug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, t.Name);
-					continue;
-				}
-
-				cachedDeserializers.Add(field.Name.GetHashCode(), recvMethod);
-			}
-
-			foreach (MethodInfo method in methods)
-			{
-				// skip nonpublic or any send/receive methods
-				if (!method.IsPublic || method.Name.StartsWith("Receive_") || method.Name.StartsWith("Send_"))
-					continue;
-
-				// find corresponding receive method
-				MethodInfo recvMethod = methods.Find(m => m.Name == string.Format("Receive_{0}", method.Name));
-
-				// if no method was found, then don't create the delegate
-				if (recvMethod == null)
-//				{
-//					Debug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", method.Name, method.DeclaringType.Name);
-					continue;
-//				}
-//				Debug.Log("Binding " + recvMethod.Name);
-
-//				Debug.LogFormat("Binding {0}.{1} to hash {2}", GetType().Name, method.Name, method.Name.GetHashCode());
-
-				cachedDeserializers.Add(method.Name.GetHashCode(), recvMethod);
+				SignalInvocation inv = MethodBindingCache.GetMessageInvocation(cachedType, msg.reader);
+				pausedMessages.Enqueue(inv);
 			}
 		}
 	}
