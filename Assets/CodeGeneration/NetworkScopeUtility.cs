@@ -14,8 +14,8 @@ public static class NetworkScopeUtility
 
 	static NetworkScopeUtility()
 	{
-		writerType = typeof(NetworkWriter);
-		readerType = typeof(NetworkReader);
+		writerType = typeof(IMessageWriter);
+		readerType = typeof(IMessageReader);
 		writerCtor = ReflectionUtility.GetParameterlessConstructor(writerType);
 		SerializerClass = new ClassDefinition("NetworkSerializer");
 	}
@@ -46,7 +46,7 @@ public static class NetworkScopeUtility
 		return null;
 	}
 
-	public static MethodInfo GetNetworkWriterSerializer(Type type)
+	public static MethodInfo GetIMessageWriterSerializer(Type type)
 	{
 		MethodInfo[] methods = writerType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
@@ -65,7 +65,7 @@ public static class NetworkScopeUtility
 		return null;
 	}
 
-	public static MethodInfo GetNetworkReaderDeserializer(Type type)
+	public static MethodInfo GetIMessageReaderDeserializer(Type type)
 	{
 		MethodInfo[] methods = readerType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
 
