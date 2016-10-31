@@ -145,7 +145,7 @@ namespace NetworkScopes
 		{
 			MethodDefinition receiveMethodDef = new MethodDefinition("Receive_" +  localMethod.Name);
 
-			// only has one parameter: NetworkReader
+			// only has one parameter: IMessageReader
 			receiveMethodDef.parameters.Add(new ParameterDefinition("reader", NetworkScopeUtility.readerType));
 
 			ParameterInfo[] paramInfos = localMethod.GetParameters();
@@ -196,8 +196,8 @@ namespace NetworkScopes
 			if (elementType.IsEnum)
 				elementType = Enum.GetUnderlyingType(elementType);
 
-			// get a method out of NetworkWriter that can serialize the parameter type
-			MethodInfo typeSerializer = NetworkScopeUtility.GetNetworkWriterSerializer(elementType);
+			// get a method out of IMessageWriter that can serialize the parameter type
+			MethodInfo typeSerializer = NetworkScopeUtility.GetIMessageWriterSerializer(elementType);
 
 			// if this type is an array, do some array magic
 			if (elementType.IsArray)
@@ -210,7 +210,7 @@ namespace NetworkScopes
 				return AddSerializeCode(method, string.Format("{0}[{1}]", paramName, arrCounterName), elementType.GetElementType());
 			}
 
-			// write out the NetworkWriter serializer call
+			// write out the IMessageWriter serializer call
 			if (typeSerializer != null)
 			{
 				if (elementType != paramType)
@@ -220,7 +220,7 @@ namespace NetworkScopes
 				return true;
 			}
 
-			// if type can't be serialized by NetworkWriter directly, see if the type has a serializer/deserializer method
+			// if type can't be serialized by IMessageWriter directly, see if the type has a serializer/deserializer method
 			if (typeSerializer == null)
 				typeSerializer = NetworkScopeUtility.GetCustomTypeSerializer(elementType);
 
@@ -254,8 +254,8 @@ namespace NetworkScopes
 			if (elementType.IsEnum)
 				elementType = Enum.GetUnderlyingType(elementType);
 					
-			// get a method out of NetworkWriter that can serialize the parameter type
-			MethodInfo typeDeserializer = NetworkScopeUtility.GetNetworkReaderDeserializer(elementType);
+			// get a method out of IMessageWriter that can serialize the parameter type
+			MethodInfo typeDeserializer = NetworkScopeUtility.GetIMessageReaderDeserializer(elementType);
 
 			// if this type is an array, do some array magic
 			if (elementType.IsArray)
@@ -275,7 +275,7 @@ namespace NetworkScopes
 				return AddDeserializeCode(method, string.Format("{0}[{1}]", paramName, arrIndex), elementType.GetElementType(), null);
 			}
 
-			// write out the NetworkWriter serializer call
+			// write out the IMessageWriter serializer call
 			if (typeDeserializer != null)
 			{
 				// create new variable if specified
@@ -288,7 +288,7 @@ namespace NetworkScopes
 				return true;
 			}
 
-			// if type can't be serialized by NetworkWriter directly, see if the type has a serializer/deserializer method
+			// if type can't be serialized by IMessageWriter directly, see if the type has a serializer/deserializer method
 			if (typeDeserializer == null)
 				typeDeserializer = NetworkScopeUtility.GetCustomTypeDeserializer(elementType);
 
