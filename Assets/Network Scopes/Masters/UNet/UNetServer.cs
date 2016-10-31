@@ -5,7 +5,7 @@ namespace NetworkScopes
 	using UnityEngine.Networking;
 	using System.Collections.Generic;
 
-	public abstract class UNetServer<TPeer> : BaseServer<TPeer> where TPeer : UnetNetworkPeer, new()
+	public abstract class UNetServer<TPeer> : BaseServer<TPeer> where TPeer : UNetPeer, new()
 	{
 		Dictionary<NetworkConnection,TPeer> connectionPeers = new Dictionary<NetworkConnection, TPeer> ();
 
@@ -83,7 +83,7 @@ namespace NetworkScopes
 
 		protected override void Peer_OnDisconnect (NetworkPeer netPeer)
 		{
-			UnetNetworkPeer unetPeer = (UnetNetworkPeer)netPeer;
+			UNetPeer unetPeer = (UNetPeer)netPeer;
 
 			connectionPeers.Remove (unetPeer.connection);
 			

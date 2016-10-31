@@ -156,7 +156,7 @@ namespace NetworkScopes
 		}
 		public override IMessageWriter CreateWriter (short scopeChannel, int signalType)
 		{
-			IMessageWriter writer = new SocketMessageWriter(ScopeMsgType.ScopeSignal);
+			IMessageWriter writer = new SocketMessageWriter(ScopeMsgType.ScopeSignal, true);
 			writer.Write(scopeChannel);
 			writer.Write(signalType);
 			return writer;

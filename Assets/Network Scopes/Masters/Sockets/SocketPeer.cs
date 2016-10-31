@@ -4,7 +4,7 @@ namespace NetworkScopes
 	using System.Net.Sockets;
 	using System.Net;
 
-	public abstract class SocketNetworkPeer : NetworkPeer
+	public abstract class SocketPeer : NetworkPeer
 	{
 		public TcpClient connection { get; private set; }
 
@@ -25,7 +25,7 @@ namespace NetworkScopes
 
 		public sealed override IMessageWriter CreateWriter (short msgType)
 		{
-			return new SocketMessageWriter (msgType);
+			return new SocketMessageWriter (msgType, true);
 		}
 
 		public sealed override void Send (IMessageWriter writer)

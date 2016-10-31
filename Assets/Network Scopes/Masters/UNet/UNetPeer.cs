@@ -4,7 +4,7 @@ namespace NetworkScopes
 {
 	using UnityEngine.Networking;
 
-	public abstract class UnetNetworkPeer : NetworkPeer
+	public abstract class UNetPeer : NetworkPeer
 	{
 		public NetworkConnection connection { get; private set; }
 

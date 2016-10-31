@@ -49,6 +49,9 @@ namespace NetworkScopes
 			if (isServerStarted)
 				throw new Exception("Server is already started");
 
+			if (defaultScope == null)
+				ScopeUtils.LogWarning("No default scope is specified for {0}.", GetType().Name);
+
 			listenPort = port;
 
 			StartServer();

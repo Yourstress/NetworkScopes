@@ -11,7 +11,7 @@ namespace NetworkScopes
 	using System.Threading.Tasks;
 	#endif
 
-	public abstract class SocketServer<TPeer> : BaseServer<TPeer> where TPeer : SocketNetworkPeer, new()
+	public abstract class SocketServer<TPeer> : BaseServer<TPeer> where TPeer : SocketPeer, new()
 	{
 		TcpListener server = null;
 
@@ -170,7 +170,7 @@ namespace NetworkScopes
 
 		public override IMessageWriter CreateWriter(short msgType)
 		{
-			return new SocketMessageWriter(msgType);
+			return new SocketMessageWriter(msgType, true);
 		}
 
 		public override void SendWriter (IMessageWriter writer, TPeer targetPeer)
@@ -215,7 +215,7 @@ namespace NetworkScopes
 
 		protected override void Peer_OnDisconnect (NetworkPeer netPeer)
 		{
-			SocketNetworkPeer sockPeer = (SocketNetworkPeer)netPeer;
+			SocketPeer sockPeer = (SocketPeer)netPeer;
 
 			connectionPeers.Remove(sockPeer.connection);
 
