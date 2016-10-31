@@ -2,3 +2,7 @@
 Library/
 Temp/
 ProjectSettings/
+obj/
+*.csproj
+*.userprefs
+*.sln
