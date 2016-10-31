@@ -129,7 +129,7 @@ namespace NetworkScopes
 			TPeer peer = (TPeer)clientObj;
 
 			NetworkStream stream = peer.connection.GetStream();
-			byte[] buffer = new byte[256];
+			byte[] buffer = new byte[4096];
 
 			int readLength;
 

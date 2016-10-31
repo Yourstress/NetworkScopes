@@ -169,7 +169,7 @@ namespace NetworkScopes
 		private void ReadStream(object state)
 		{
 			int readLength;
-			byte[] buffer = new byte[256];
+			byte[] buffer = new byte[4096];
 
 			// each message starts with a length
 			while (stream.Read(buffer, 0, sizeof(ushort)) == 2)
