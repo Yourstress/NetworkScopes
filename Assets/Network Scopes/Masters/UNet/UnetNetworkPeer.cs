@@ -9,6 +9,11 @@ namespace NetworkScopes
 		public NetworkConnection connection { get; private set; }
 
 		public override bool isConnected { get { return connection.isConnected; } }
+		public override string ipAddress {
+			get {
+				return connection.address;
+			}
+		}
 
 		public void Initialize (NetworkConnection conn)
 		{
