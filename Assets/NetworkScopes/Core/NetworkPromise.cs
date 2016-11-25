@@ -5,31 +5,43 @@ namespace NetworkScopes
 
 	public class NetworkPromise<T>
 	{
-		private bool didReturn = false;
+		public T value { get; private set; }
 
-		public void Return(T value)
-		{
-			if (didReturn)
-				throw new Exception("Promise already returned.");
-		}
+		public NetworkPromise() {}
 
-		public static NetworkPromise<T> ReturnImmediately(T value)
+		public NetworkPromise(T val)
 		{
-			return new NetworkPromise<T>();
+			value = val;
 		}
 	}
 
 	public class NetworkPromise<T1,T2>
 	{
-		public T1 argument1 { get; private set; }
-		public T2 argument2 { get; private set; }
+		public T1 value1 { get; private set; }
+		public T2 value2 { get; private set; }
 
-		public static NetworkPromise<T1,T2> Create(T1 value1, T2 value2)
+		public NetworkPromise() {}
+
+		public NetworkPromise(T1 val1, T2 val2)
 		{
-			var prom = new NetworkPromise<T1,T2>();
-			prom.argument1 = value1;
-			prom.argument2 = value2;
-			return prom;
+			value1 = val1;
+			value2 = val2;
+		}
+	}
+
+	public class NetworkPromise<T1,T2,T3>
+	{
+		public T1 value1 { get; private set; }
+		public T2 value2 { get; private set; }
+		public T3 value3 { get; private set; }
+
+		public NetworkPromise() {}
+
+		public NetworkPromise(T1 val1, T2 val2, T3 val3)
+		{
+			value1 = val1;
+			value2 = val2;
+			value3 = val3;
 		}
 	}
 }

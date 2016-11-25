@@ -13,38 +13,40 @@ namespace NetworkScopes.CodeProcessing
 
 		public static ScopeDefinition NewServerScopeWriter(Type scopeType, Type interfaceType)
 		{
-			ScopeDefinition serverScope = new ScopeDefinition(scopeType);
+			ScopeDefinition serverScope = new ScopeDefinition(scopeType, true, true);
 			serverScope.SetBaseClass(typeof(ServerScope<>), interfaceType);
 			return serverScope;
 		}
 
 		public static ScopeDefinition NewClientScopeWriter(Type scopeType)
 		{
-			ScopeDefinition clientScope = new ScopeDefinition(scopeType);
+			ScopeDefinition clientScope = new ScopeDefinition(scopeType, true, true);
 			clientScope.SetBaseClass(typeof(ClientScope));
 			return clientScope;
 		}
 
-		public static ScopeDefinition NewAuthenticatorScope(Type scopeType)
+		public static ScopeDefinition NewAuthenticatorScope(Type scopeType, bool addMethods, bool addScopePostfix)
 		{
-			ScopeDefinition authScope = new ScopeDefinition(scopeType);
-			authScope.SetBaseClass(typeof(BaseAuthenticator));
+			ScopeDefinition authScope = new ScopeDefinition(scopeType, addMethods, addScopePostfix);
+			authScope.SetBaseClass(typeof(BaseServerAuthenticator));
 			authScope.IsInterface = false;
 			authScope.IsAbstract = true;
 			return authScope;
 		}
 
-		private ScopeDefinition(string scopeName, string scopeNamespace) : base(scopeName, scopeNamespace)
+		public ScopeDefinition(string scopeName, string scopeNamespace) : base(scopeName, scopeNamespace)
 		{
 		}
 
-		private ScopeDefinition(Type scopeType)
+		private ScopeDefinition(Type scopeType, bool addMethods, bool addScopeToPostfix)
 		{
-			Name = MakeScopeName(scopeType);
+			Name = MakeScopeName(scopeType, addScopeToPostfix);
 			Namespace = scopeType.Namespace;
 
 			IsAbstract = true;
-			AddMethods(scopeType, true, false);
+
+			if (addMethods)
+				AddMethods(scopeType, true, false);
 
 			this.scopeType = scopeType;
 		}
@@ -61,7 +63,7 @@ namespace NetworkScopes.CodeProcessing
 			return concreteScopeDef;
 		}
 
-		protected override MethodDefinition AddMethod (MethodInfo method, bool isAbstract, bool isOverride)
+		public override MethodDefinition AddMethod (MethodInfo method, bool isAbstract, bool isOverride)
 		{
 			MethodDefinition methodDef = base.AddMethod (method, isAbstract, isOverride);
 
@@ -95,15 +97,18 @@ namespace NetworkScopes.CodeProcessing
 			return methodDef;
 		}
 
-		private static string MakeScopeName(Type scopeType)
+		private static string MakeScopeName(Type scopeType, bool addScopePostfix)
 		{
 			string name = scopeType.Name;
 
 			// trim the 'I' from the class name
 			if (name.StartsWith("I"))
-				name = name.Substring(1, name.Length-1) + "Scope";
+				name = name.Substring(1, name.Length-1);
 			else if (scopeType.IsInterface)
 				Debug.LogWarningFormat("The Scope interface type {0} should be renamed to I{0} in order to distinguish interfaces from concrete classes.", scopeType.Name);
+			
+			if (addScopePostfix)
+				name += "Scope";
 
 			return name;
 		}

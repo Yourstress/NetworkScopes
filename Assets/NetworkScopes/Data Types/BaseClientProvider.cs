@@ -52,6 +52,8 @@ namespace NetworkScopes
 			DisconnectClient();
 		}
 
+		public abstract void SendRaw (INetworkWriter writer);
+
 		#region IClientCallbacks implementation
 		public void OnConnect ()
 		{
@@ -68,5 +70,7 @@ namespace NetworkScopes
 			UnityEngine.Debug.Log("Received something that starts with " + reader.ReadChar());
 		}
 		#endregion
+
+		public abstract INetworkWriter CreateNetworkWriter();
 	}
 }

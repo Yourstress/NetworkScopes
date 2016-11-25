@@ -46,5 +46,10 @@ namespace NetworkScopes.UNet
 		{
 			writer.Write (value);
 		}
+
+		public byte[] GetBytes()
+		{
+			return writer.ToArray();
+		}
 	}
 }

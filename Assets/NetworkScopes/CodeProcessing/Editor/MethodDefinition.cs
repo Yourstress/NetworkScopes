@@ -78,7 +78,9 @@ namespace NetworkScopes.CodeProcessing
 
 			// write method definition
 			if (!IsAbstract)
-				instructions.Write(writer);
+			{
+				instructions.Write(writer, ReturnType);
+			}
 
 //			writer.WriteFullLine(string.Empty);
 		}

@@ -68,13 +68,23 @@ namespace NetworkScopes.CodeProcessing
 			instructions.Add(inst);
 		}
 
-		public void Write(ScriptWriter writer)
+		public void Write(ScriptWriter writer, string optionalReturn = null)
 		{
 			writer.BeginScope();
 
 			for (int x = 0; x < instructions.Count; x++)
 			{
 				writer.WriteFullLine(instructions[x]);
+			}
+
+			if (!string.IsNullOrEmpty(optionalReturn) && !optionalReturn.Contains("void"))
+			{
+				// if it's generic, return default(T);
+				if (optionalReturn.Contains("<"))
+					writer.WriteFullLineFormat("return default({0});", optionalReturn);
+				// otherwise, return null
+				else
+					writer.WriteFullLine("return null;");
 			}
 
 			writer.EndScope();

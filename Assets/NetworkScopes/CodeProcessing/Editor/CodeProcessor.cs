@@ -19,8 +19,8 @@ namespace NetworkScopes.CodeProcessing
 		{
 			Type serverScopeType = typeof(IServerScope<>);
 			Type clientScopeType = typeof(IClientScope);
-			Type authenticatorInterfaceType = typeof(IAuthenticator);
-			Type authenticatorBaseType = typeof(BaseAuthenticator);
+			Type authenticatorInterfaceType = typeof(IServerAuthenticator);
+			Type authenticatorBaseType = typeof(BaseServerAuthenticator);
 
 			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 			{
@@ -44,18 +44,45 @@ namespace NetworkScopes.CodeProcessing
 						{
 							if (interfaceType == clientScopeType)
 							{
-								ScopeDefinition scope = ScopeDefinition.NewClientScopeWriter(t);
-								abstractScopes.Add(scope);
+//								ScopeDefinition scope = ScopeDefinition.NewClientScopeWriter(t);
+//								abstractScopes.Add(scope);
 							}
 							else if (interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == serverScopeType)
 							{
-								ScopeDefinition scope = ScopeDefinition.NewServerScopeWriter(t, interfaceType);
-								abstractScopes.Add(scope);
+//								ScopeDefinition scope = ScopeDefinition.NewServerScopeWriter(t, interfaceType);
+//								abstractScopes.Add(scope);
 							}
 							else if (interfaceType == authenticatorInterfaceType && t != authenticatorBaseType)
 							{
-								ScopeDefinition scope = ScopeDefinition.NewAuthenticatorScope(t);
-								abstractScopes.Add(scope);
+								ScopeDefinition serverAuthScope = ScopeDefinition.NewAuthenticatorScope(t, true, true);
+								string clientName = serverAuthScope.Name;
+								string clientNamespace = serverAuthScope.Namespace;
+								serverAuthScope.Name += "_Server";
+								abstractScopes.Add(serverAuthScope);
+								ScopeDefinition authConcrete = ScopeDefinition.NewAuthenticatorScope(t, false, false);
+//								authConcrete.Name = authConcrete.scopeType.Name;
+								authConcrete.IsAbstract = false;
+								abstractScopes.Add(authConcrete);
+
+								ScopeDefinition clientAuthScope = ScopeDefinition.NewAuthenticatorScope(t, false, false);
+
+								if (clientName.Contains("Authenticator"))
+									clientAuthScope.Name = clientName.Replace("Authenticator", "ClientAuthenticator");
+								else 
+									clientAuthScope.Name = clientName.Replace("Scope", "ClientScope");
+								clientAuthScope.Namespace = clientNamespace;
+								clientAuthScope.IsAbstract = false;
+								clientAuthScope.SetBaseClass(typeof(BaseClientAuthenticator));
+								// the client auth scope has most of the code...
+								foreach (MethodInfo method in t.GetMethods())
+								{
+									MethodDefinition methodDef = clientAuthScope.AddMethod(method, false, false);
+									methodDef.ReturnType = "void";
+
+//									methodDef.instructions.AddMethodCallWithAssignment("writer", typeof(INetworkWriter), "writer", false,
+								}
+								
+								abstractScopes.Add(clientAuthScope);
 							}
 						}
 						catch (Exception e)
@@ -92,31 +119,18 @@ namespace NetworkScopes.CodeProcessing
 			foreach (ScopeDefinition scope in abstractScopes)
 			{
 				string path = MakeScopePath(scope.scopeType, true);
-				scope.WriteToFile(path, false, true);
+				bool createIfExists = scope.IsAbstract && scope.HasRuntimeConcreteType;
 
-				ScopeDefinition concreteScope = scope.CreateConcreteClassDefinition();
-				if (!concreteScope.HasRuntimeConcreteType)
-				{
-//					path = MakeScopePath(scope.scopeType, true);
-					concreteScope.WriteToFile(path, false, false);
-				}
-				else
-				{
-					Debug.Log("Skipping");
-//					q.WriteToFile(path, false, false);
-				}
+				scope.WriteToFile(path, false, createIfExists);
 			}
 		}
 
 		public void Print()
 		{
 			StringBuilder sb = new StringBuilder();
-			foreach (ScopeDefinition abstractDef in abstractScopes)
+			foreach (ScopeDefinition def in abstractScopes)
 			{
-				Print("ABSTRACT", abstractDef, sb);
-
-				ClassDefinition concreteScopeDef = abstractDef.CreateConcreteClassDefinition();
-				Print("<color=green>CONCRETE</color>", concreteScopeDef, sb);
+				Print(def.IsAbstract ? "<color=grey>ABSTRACT</color>" : "<color=green>CONCRETE</color>", def, sb);
 			}
 		}
 

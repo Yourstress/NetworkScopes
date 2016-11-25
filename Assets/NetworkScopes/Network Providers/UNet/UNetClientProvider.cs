@@ -26,6 +26,17 @@ namespace NetworkScopes.UNet
 			client.Disconnect();
 		}
 
+		public override void SendRaw (INetworkWriter writer)
+		{
+			byte[] data = writer.GetBytes();
+			client.SendBytes(data, data.Length, 0);
+		}
+
+		public override INetworkWriter CreateNetworkWriter ()
+		{
+			return new UNetNetworkWriter();
+		}
+
 		#region Internals
 		void SetupClient()
 		{

@@ -10,7 +10,7 @@ namespace NetworkScopes
 		private List<BaseServerScope> scopes;
 
 		public BaseServerScope defaultScope;
-		private Dictionary<IAuthenticator,BaseServerScope> authenticatorTargets = null;
+		private Dictionary<IServerAuthenticator,BaseServerScope> authenticatorTargets = null;
 
 		public event Action<PeerEntity> OnPeerEntityConnected = delegate {};
 		public event Action<PeerEntity> OnPeerEntityDisconnected = delegate {};
@@ -44,7 +44,7 @@ namespace NetworkScopes
 			return scope;
 		}
 
-		public TAuthenticator UseAuthenticator<TAuthenticator>(BaseServerScope targetScope) where TAuthenticator : IAuthenticator, new()
+		public TAuthenticator UseAuthenticator<TAuthenticator>(BaseServerScope targetScope) where TAuthenticator : IServerAuthenticator, new()
 		{
 			TAuthenticator authenticator = new TAuthenticator();
 
@@ -56,7 +56,7 @@ namespace NetworkScopes
 
 			// register the authenticator as an entry point for new peers
 			if (authenticatorTargets == null)
-				authenticatorTargets = new Dictionary<IAuthenticator, BaseServerScope>(4);
+				authenticatorTargets = new Dictionary<IServerAuthenticator, BaseServerScope>(4);
 			
 			authenticatorTargets[authenticator] = targetScope;
 

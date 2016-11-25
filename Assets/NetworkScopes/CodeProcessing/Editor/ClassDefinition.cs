@@ -128,7 +128,7 @@ namespace NetworkScopes.CodeProcessing
 			}
 		}
 
-		protected virtual MethodDefinition AddMethod(MethodInfo method, bool isAbstract, bool isOverride)
+		public virtual MethodDefinition AddMethod(MethodInfo method, bool isAbstract, bool isOverride)
 		{
 			MethodDefinition methodDef = new MethodDefinition(method, true);
 			

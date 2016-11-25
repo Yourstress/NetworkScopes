@@ -10,5 +10,7 @@ namespace NetworkScopes
 		void WriteByte(byte value);
 		void WriteSingle(float value);
 		void WriteChar(char value);
+
+		byte[] GetBytes();
 	}
 }
