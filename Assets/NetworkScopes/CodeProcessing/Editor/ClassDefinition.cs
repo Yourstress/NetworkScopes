@@ -58,10 +58,33 @@ namespace NetworkScopes.CodeProcessing
 			imports.Add(typeof(GeneratedAttribute).Namespace);
 		}
 
+		protected static string CleanGenericTypeName(string name)
+		{
+			int genericCharIndex = name.LastIndexOf('`');
+			return name.Remove(genericCharIndex, name.Length-genericCharIndex);
+		}
+
+		protected static string AddGenericTypeParameters(string name, Type[] genericArgs)
+		{
+			StringBuilder nameBuilder = new StringBuilder(name);
+			nameBuilder.Append("<");
+
+			for (int x = 0; x < genericArgs.Length; x++)
+			{
+				Type arg = genericArgs[x].IsByRef ? genericArgs[x].GetElementType() : genericArgs[x];
+
+				if (x != 0)
+					nameBuilder.Append(",");
+				nameBuilder.Append(ParameterDefinition.MakeTypeName(arg));
+			}
+
+			nameBuilder.Append(">");
+			return nameBuilder.ToString();
+		}
+
 		public void SetBaseClass(Type baseClass, Type optionalGenericType = null)
 		{
-			StringBuilder name = new StringBuilder(baseClass.Name);
-
+			string name = baseClass.Name;
 			if (!string.IsNullOrEmpty(baseClass.Namespace))
 				imports.Add(baseClass.Namespace);
 
@@ -71,23 +94,13 @@ namespace NetworkScopes.CodeProcessing
 
 				if (genericArgs.Length != 0)
 				{
-					int genericCharIndex = baseClass.Name.LastIndexOf('`');
-					name.Remove(genericCharIndex, name.Length-genericCharIndex);
+					name = CleanGenericTypeName(name);
 
-					name.Append("<");
-					
-					for (int x = 0; x < genericArgs.Length; x++)
-					{
-						if (x != 0)
-							name.Append(", ");
-						name.Append(genericArgs[x].Name);
-					}
-
-					name.Append(">");
+					name = AddGenericTypeParameters(name, genericArgs);
 				}
 			}
 
-			BaseClass = name.ToString();
+			BaseClass = name;
 		}
 
 		public FieldDefinition AddField(string name, string typeName, bool isPublic)
@@ -115,9 +128,9 @@ namespace NetworkScopes.CodeProcessing
 			}
 		}
 
-		protected MethodDefinition AddMethod(MethodInfo method, bool isAbstract, bool isOverride)
+		protected virtual MethodDefinition AddMethod(MethodInfo method, bool isAbstract, bool isOverride)
 		{
-			MethodDefinition methodDef = new MethodDefinition(method);
+			MethodDefinition methodDef = new MethodDefinition(method, true);
 			
 			if (isAbstract)
 				methodDef.IsAbstract = true;

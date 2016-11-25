@@ -12,6 +12,11 @@ namespace NetworkScopes.UNet
 			reader = new NetworkReader ();
 		}
 
+		public UNetNetworkReader(NetworkReader existingReader)
+		{
+			reader = existingReader;
+		}
+		
 		public string ReadString ()
 		{
 			return reader.ReadString ();
@@ -40,6 +45,11 @@ namespace NetworkScopes.UNet
 		public float ReadSingle ()
 		{
 			return reader.ReadSingle ();
+		}
+
+		public char ReadChar ()
+		{
+			return reader.ReadChar ();
 		}
 	}
 }

@@ -18,13 +18,13 @@ namespace NetworkScopes.CodeProcessing
 
 		public MethodBodyDefinition instructions = new MethodBodyDefinition();
 
-		public MethodDefinition(MethodInfo methodInfo)
+		public MethodDefinition(MethodInfo methodInfo, bool trimOutParams)
 		{
 			Name = methodInfo.Name;
 
 			foreach (ParameterInfo pi in methodInfo.GetParameters())
 			{
-				if (pi.IsOut)
+				if (trimOutParams && pi.IsOut)
 					continue;
 				
 				ParameterDefinition paramDef = new ParameterDefinition(pi.Name, pi.ParameterType);

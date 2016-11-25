@@ -9,5 +9,6 @@ namespace NetworkScopes
 		short ReadInt16();
 		byte ReadByte();
 		float ReadSingle();
+		char ReadChar();
 	}
 }

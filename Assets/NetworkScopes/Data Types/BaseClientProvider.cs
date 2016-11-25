@@ -3,7 +3,7 @@ namespace NetworkScopes
 {
 	using System;
 
-	public abstract class BaseClientProvider : IClientProvider
+	public abstract class BaseClientProvider : IClientProvider, IClientCallbackHandler
 	{
 		private string lastHost;
 		private int lastPort;
@@ -11,9 +11,12 @@ namespace NetworkScopes
 		public bool isConnected { get; private set; }
 		public bool isConnecting { get; private set; }
 
+		public event Action OnConnected = delegate {};
+		public event Action OnDisconnected = delegate {};
+
 		public bool enableLogging;
 
-		protected IClientCallbacks clientCallbacks { get; private set; }
+		protected IClientCallbackHandler callbackHandler { get; private set; }
 
 		protected abstract void ConnectClient(string hostname, int port);
 		protected abstract void DisconnectClient();
@@ -48,5 +51,22 @@ namespace NetworkScopes
 
 			DisconnectClient();
 		}
+
+		#region IClientCallbacks implementation
+		public void OnConnect ()
+		{
+			OnConnected();
+		}
+
+		public void OnDisconnect ()
+		{
+			OnDisconnect();
+		}
+
+		public void OnReceiveRaw (INetworkReader reader)
+		{
+			UnityEngine.Debug.Log("Received something that starts with " + reader.ReadChar());
+		}
+		#endregion
 	}
 }

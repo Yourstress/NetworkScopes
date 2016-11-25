@@ -34,9 +34,9 @@ namespace NetworkScopes.UNet
 			HostTopology topology = overrideTopology ?? new HostTopology (UnetUtil.CreateConnectionConfig (), 3000);
 
 			client.Configure (topology);
-// 
-//			client.RegisterHandler (UNetMsgType.Connect, UnetOnConnect);
-//			client.RegisterHandler (UNetMsgType.Disconnect, UnetOnDisconnect);
+
+			client.RegisterHandler (UNetMsgType.Connect, UnetOnConnect);
+			client.RegisterHandler (UNetMsgType.Disconnect, UnetOnDisconnect);
 //			client.RegisterHandler (UNetMsgType.Error, UnetOnError);
 //
 //			client.RegisterHandler (UNetMsgType.EnterScope, UnetOnEnterScope);
@@ -45,7 +45,24 @@ namespace NetworkScopes.UNet
 //			client.RegisterHandler (UNetMsgType.DisconnectMessage, UnetOnDisconnectMessage);
 //			client.RegisterHandler (UNetMsgType.RedirectMessage, UnetOnRedirectMessage);
 //			
-//			client.RegisterHandler (UNetMsgType.ScopeSignal, UnetOnScopeSignal);
+			client.RegisterHandler (UNetMsgType.ScopeSignal, UnetOnScopeSignal);
+		}
+		#endregion
+
+		#region UNet Callback Routing
+		void UnetOnConnect(NetworkMessage msg)
+		{
+			OnConnect();
+		}
+
+		void UnetOnDisconnect(NetworkMessage msg)
+		{
+			OnDisconnect();
+		}
+
+		void UnetOnScopeSignal(NetworkMessage msg)
+		{
+			OnReceiveRaw(new UNetNetworkReader(msg.reader));
 		}
 		#endregion
 	}

@@ -35,6 +35,7 @@ namespace NetworkScopes.UNet
 
 		public Dictionary<NetworkConnection,PeerEntity> peers;
 
+		#region UNet Callback Routing
 		void UnetOnConnect(NetworkMessage msg)
 		{
 			PeerEntity peer = new PeerEntity(this);
@@ -54,5 +55,6 @@ namespace NetworkScopes.UNet
 		void UnetOnScopeSignal(NetworkMessage msg)
 		{
 		}
+		#endregion
 	}
 }

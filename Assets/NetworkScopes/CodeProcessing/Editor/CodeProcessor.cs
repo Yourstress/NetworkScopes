@@ -27,7 +27,7 @@ namespace NetworkScopes.CodeProcessing
 				// skip anything other than the main assembly
 				if (!assembly.FullName.StartsWith("Assembly-CSharp,"))
 					continue;
-
+				
 				foreach (Type t in assembly.GetTypes())
 				{
 					// skip processing generated types
@@ -40,20 +40,27 @@ namespace NetworkScopes.CodeProcessing
 					{
 						Type interfaceType = interfaces[i];
 
-						if (interfaceType == clientScopeType)
+						try
 						{
-							ScopeDefinition scope = ScopeDefinition.NewClientScopeWriter(t);
-							abstractScopes.Add(scope);
+							if (interfaceType == clientScopeType)
+							{
+								ScopeDefinition scope = ScopeDefinition.NewClientScopeWriter(t);
+								abstractScopes.Add(scope);
+							}
+							else if (interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == serverScopeType)
+							{
+								ScopeDefinition scope = ScopeDefinition.NewServerScopeWriter(t, interfaceType);
+								abstractScopes.Add(scope);
+							}
+							else if (interfaceType == authenticatorInterfaceType && t != authenticatorBaseType)
+							{
+								ScopeDefinition scope = ScopeDefinition.NewAuthenticatorScope(t);
+								abstractScopes.Add(scope);
+							}
 						}
-						else if (interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == serverScopeType)
+						catch (Exception e)
 						{
-							ScopeDefinition scope = ScopeDefinition.NewServerScopeWriter(t, interfaceType);
-							abstractScopes.Add(scope);
-						}
-						else if (interfaceType == authenticatorInterfaceType && t != authenticatorBaseType)
-						{
-							ScopeDefinition scope = ScopeDefinition.NewAuthenticatorScope(t);
-							abstractScopes.Add(scope);
+							Debug.LogWarning(e.Message);
 						}
 					}
 				}
@@ -87,10 +94,16 @@ namespace NetworkScopes.CodeProcessing
 				string path = MakeScopePath(scope.scopeType, true);
 				scope.WriteToFile(path, false, true);
 
-				if (!scope.HasRuntimeConcreteType)
+				ScopeDefinition concreteScope = scope.CreateConcreteClassDefinition();
+				if (!concreteScope.HasRuntimeConcreteType)
 				{
-					path = MakeScopePath(scope.scopeType, true);
-					scope.CreateConcreteClassDefinition().WriteToFile(path, false, false);
+//					path = MakeScopePath(scope.scopeType, true);
+					concreteScope.WriteToFile(path, false, false);
+				}
+				else
+				{
+					Debug.Log("Skipping");
+//					q.WriteToFile(path, false, false);
 				}
 			}
 		}

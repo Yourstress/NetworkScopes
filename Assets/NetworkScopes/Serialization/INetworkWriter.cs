@@ -9,5 +9,6 @@ namespace NetworkScopes
 		void WriteInt16(short value);
 		void WriteByte(byte value);
 		void WriteSingle(float value);
+		void WriteChar(char value);
 	}
 }

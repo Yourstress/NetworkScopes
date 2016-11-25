@@ -11,14 +11,14 @@ namespace NetworkScopes.CodeProcessing
 		public string TypeNamespace;
 		public bool IsArray { get { return TypeName.EndsWith("[]"); } }
 
-		private readonly Dictionary<Type,string> typeNames = new Dictionary<Type, string>()
+		private static Dictionary<string,string> typeNames = new Dictionary<string, string>()
 		{
-			{ typeof(int), "int" },
-			{ typeof(short), "int" },
-			{ typeof(float), "float" },
-			{ typeof(double), "double" },
-			{ typeof(bool), "bool" },
-			{ typeof(string), "string" },
+			{ typeof(int).Name, "int" },
+			{ typeof(short).Name, "short" },
+			{ typeof(float).Name, "float" },
+			{ typeof(double).Name, "double" },
+			{ typeof(bool).Name, "bool" },
+			{ typeof(string).Name, "string" },
 		};
 
 		public string TypeFullName
@@ -32,12 +32,22 @@ namespace NetworkScopes.CodeProcessing
 			}
 		}
 
+		public static string MakeTypeName(Type type)
+		{
+			string name;
+
+			if (!typeNames.TryGetValue(type.Name, out name))
+			{
+				return type.Name;
+			}
+			return name;
+		}
+
 		public ParameterDefinition(string paramName, Type type)
 		{
 			Name = paramName;
 
-			if (!typeNames.TryGetValue(type, out TypeName))
-				TypeName = type.Name;
+			TypeName = MakeTypeName(type);
 
 			if (type.DeclaringType != null)
 				TypeName = string.Format("{0}.{1}", type.DeclaringType.Name, TypeName);

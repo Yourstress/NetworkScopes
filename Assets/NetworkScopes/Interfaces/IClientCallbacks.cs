@@ -1,8 +1,10 @@
 
 namespace NetworkScopes
 {
-	public interface IClientCallbacks
+	public interface IClientCallbackHandler
 	{
+		void OnConnect();
+		void OnDisconnect();
+		void OnReceiveRaw(INetworkReader reader);
 	}
-	
 }

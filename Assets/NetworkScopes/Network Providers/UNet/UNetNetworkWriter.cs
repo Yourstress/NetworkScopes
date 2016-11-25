@@ -41,5 +41,10 @@ namespace NetworkScopes.UNet
 		{
 			writer.Write (value);
 		}
+
+		public void WriteChar (char value)
+		{
+			writer.Write (value);
+		}
 	}
 }

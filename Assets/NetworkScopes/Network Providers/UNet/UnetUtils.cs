@@ -1,5 +1,5 @@
 ﻿
-namespace NetworkScopes
+namespace NetworkScopes.UNet
 {
 	using UnityEngine.Networking;
 
