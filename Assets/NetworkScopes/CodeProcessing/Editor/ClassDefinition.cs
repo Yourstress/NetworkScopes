@@ -54,6 +54,8 @@ namespace NetworkScopes.CodeProcessing
 			classes = new List<ClassDefinition>(1);
 			methods = new List<MethodDefinition>();
 			dependancies = new List<ClassDefinition>();
+
+			imports.Add(typeof(GeneratedAttribute).Namespace);
 		}
 
 		public void SetBaseClass(Type baseClass, Type optionalGenericType = null)

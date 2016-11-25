@@ -8,9 +8,12 @@ namespace NetworkScopes
 		public float connectTime { get; private set; }
 		public float connectDuration { get { return Time.time - connectTime; } }
 
-		public PeerEntity()
+		public IServerProvider serviceProvider;
+
+		public PeerEntity(IServerProvider serverProvider)
 		{
 			connectTime = Time.time;
+			this.serviceProvider = serverProvider;
 		}
 	}
 }

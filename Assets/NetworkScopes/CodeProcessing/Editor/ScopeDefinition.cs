@@ -1,10 +1,10 @@
-using UnityEngine;
-using System.Reflection;
-
 
 namespace NetworkScopes.CodeProcessing
 {
+	using UnityEngine;
+	using System.Reflection;
 	using System;
+	using System.Collections.Generic;
 
 	public class ScopeDefinition : ClassDefinition
 	{
@@ -24,12 +24,12 @@ namespace NetworkScopes.CodeProcessing
 			return clientScope;
 		}
 
-		public static ScopeDefinition NewAuthenticatorScope(Type scopeType, Type interfaceType)
+		public static ScopeDefinition NewAuthenticatorScope(Type scopeType)
 		{
 			ScopeDefinition authScope = new ScopeDefinition(scopeType);
-			authScope.SetBaseClass(interfaceType);
-			authScope.IsInterface = true;
-			authScope.IsAbstract = false;
+			authScope.SetBaseClass(typeof(BaseAuthenticator));
+			authScope.IsInterface = false;
+			authScope.IsAbstract = true;
 			return authScope;
 		}
 
@@ -38,6 +38,7 @@ namespace NetworkScopes.CodeProcessing
 		private ScopeDefinition(Type scopeType)
 		{
 			Name = MakeScopeName(scopeType);
+			Namespace = scopeType.Namespace;
 
 			IsAbstract = true;
 			AddMethods(scopeType, true, false);
@@ -62,15 +63,11 @@ namespace NetworkScopes.CodeProcessing
 		{
 			string name = scopeType.Name;
 
-			if (!name.StartsWith("I") && scopeType.IsInterface)
-			{
-				Debug.LogWarningFormat("The Scope interface type {0} should be renamed to I{0} in order to distinguish interfaces from concrete classes.", scopeType.Name);
-			}
-			else
-			{
-				// trim the 'I' from the class name
+			// trim the 'I' from the class name
+			if (name.StartsWith("I"))
 				name = name.Substring(1, name.Length-1) + "Scope";
-			}
+			else if (scopeType.IsInterface)
+				Debug.LogWarningFormat("The Scope interface type {0} should be renamed to I{0} in order to distinguish interfaces from concrete classes.", scopeType.Name);
 
 			return name;
 		}

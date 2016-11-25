@@ -32,4 +32,8 @@ namespace NetworkScopes
 			return client;
 		}
 	}
+
+	public class NetworkClient : IClientCallbacks
+	{
+	}
 }

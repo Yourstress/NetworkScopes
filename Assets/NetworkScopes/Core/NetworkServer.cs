@@ -1,15 +1,19 @@
 ﻿
 namespace NetworkScopes
 {
+	using System;
 	using System.Collections.Generic;
 
-	public class NetworkServer
+	public class NetworkServer : IServerCallbacks
 	{
 		private List<IServerProvider> serverProviders;
 		private List<BaseServerScope> scopes;
 
 		public BaseServerScope defaultScope;
 		private Dictionary<IAuthenticator,BaseServerScope> authenticatorTargets = null;
+
+		public event Action<PeerEntity> OnPeerEntityConnected = delegate {};
+		public event Action<PeerEntity> OnPeerEntityDisconnected = delegate {};
 
 		public NetworkServer(int serverCapacity = 1)
 		{
@@ -20,6 +24,7 @@ namespace NetworkScopes
 		public TServerProvider AddServerProvider<TServerProvider>() where TServerProvider : IServerProvider, new()
 		{
 			TServerProvider provider = new TServerProvider();
+			provider.Initialize(this);
 			serverProviders.Add(provider);
 			return provider;
 		}
@@ -57,5 +62,17 @@ namespace NetworkScopes
 
 			return authenticator;
 		}
+
+		#region IServerCallbacks implementation
+		public void OnConnected (PeerEntity entity)
+		{
+			OnPeerEntityConnected(entity);
+		}
+
+		public void OnDisconnected (PeerEntity entity)
+		{
+			OnPeerEntityDisconnected(entity);
+		}
+		#endregion
 	}
 }

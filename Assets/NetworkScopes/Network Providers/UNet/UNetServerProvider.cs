@@ -37,7 +37,7 @@ namespace NetworkScopes.UNet
 
 		void UnetOnConnect(NetworkMessage msg)
 		{
-			PeerEntity peer = new PeerEntity();
+			PeerEntity peer = new PeerEntity(this);
 			peers[msg.conn] = peer;
 
 			serverCallbacks.OnConnected(peer);

@@ -1,6 +1,8 @@
 ﻿
 namespace NetworkScopes
 {
+	using System.Collections.Generic;
+
 	public interface IServerProvider
 	{
 		int listenPort { get; }

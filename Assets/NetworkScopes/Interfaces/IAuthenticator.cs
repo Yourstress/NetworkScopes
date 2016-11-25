@@ -1,11 +1,6 @@
 ﻿
 namespace NetworkScopes
 {
-	public class MyAuthenticator : BaseAuthenticator
-	{
-//		public bool AuthenticatePeer();
-	}
-
 	public abstract class BaseAuthenticator : IAuthenticator
 	{
 		public BaseServerScope targetScope { get; set; }

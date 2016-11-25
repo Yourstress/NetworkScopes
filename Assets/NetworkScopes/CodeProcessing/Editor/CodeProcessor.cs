@@ -30,6 +30,10 @@ namespace NetworkScopes.CodeProcessing
 
 				foreach (Type t in assembly.GetTypes())
 				{
+					// skip processing generated types
+					if (t.GetCustomAttributes(typeof(GeneratedAttribute), false).Length > 0)
+						continue;
+					
 					// find server and client scope interfaces and generate scope classes that match their "template"
 					Type[] interfaces = t.GetInterfaces();
 					for (int i = 0; i < interfaces.Length; i++)
@@ -48,7 +52,7 @@ namespace NetworkScopes.CodeProcessing
 						}
 						else if (interfaceType == authenticatorInterfaceType && t != authenticatorBaseType)
 						{
-							ScopeDefinition scope = ScopeDefinition.NewAuthenticatorScope(t, interfaceType);
+							ScopeDefinition scope = ScopeDefinition.NewAuthenticatorScope(t);
 							abstractScopes.Add(scope);
 						}
 					}
@@ -80,23 +84,41 @@ namespace NetworkScopes.CodeProcessing
 		{
 			foreach (ScopeDefinition scope in abstractScopes)
 			{
-				string scopePath = MakeScopePath(scope.scopeType);
-				scope.WriteToFile(scopePath, false, true);
+				string path = MakeScopePath(scope.scopeType, true);
+				scope.WriteToFile(path, false, true);
 
 				if (!scope.HasRuntimeConcreteType)
-					scope.CreateConcreteClassDefinition().WriteToFile(scopePath, false, false);
+				{
+					path = MakeScopePath(scope.scopeType, true);
+					scope.CreateConcreteClassDefinition().WriteToFile(path, false, false);
+				}
 			}
 		}
 
 		public void Print()
 		{
-			foreach (ScopeDefinition scope in abstractScopes)
+			StringBuilder sb = new StringBuilder();
+			foreach (ScopeDefinition abstractDef in abstractScopes)
 			{
-				Debug.Log(scope);
+				Print("ABSTRACT", abstractDef, sb);
+
+				ClassDefinition concreteScopeDef = abstractDef.CreateConcreteClassDefinition();
+				Print("<color=green>CONCRETE</color>", concreteScopeDef, sb);
 			}
 		}
 
-		private static string MakeScopePath(Type scopeType)
+		private void Print(string prefix, ClassDefinition classDef, StringBuilder sb)
+		{
+			sb.AppendFormat("{0} <color=white>{1}</color>", prefix, classDef.Name);
+			sb.AppendLine();
+			sb.AppendLine(classDef.ToString());
+
+			Debug.Log(sb.ToString());
+
+			sb.Remove(0, sb.Length);
+		}
+
+		private static string MakeScopePath(Type scopeType, bool putInGeneratedFolder)
 		{
 			string[] foundAssets = AssetDatabase.FindAssets(scopeType.Name);
 
@@ -108,7 +130,13 @@ namespace NetworkScopes.CodeProcessing
 				{
 					string path = AssetDatabase.GUIDToAssetPath(foundAssets[x]);
 					if (Path.GetFileNameWithoutExtension(path) == scopeName)
-						return Path.GetDirectoryName(path);
+					{
+						// trim the file name
+						path = Path.GetDirectoryName(path);
+
+						if (putInGeneratedFolder)
+							path = Path.Combine(path, "Generated");
+					}
 				}
 			}
 			return "Assets/GeneratedCode";

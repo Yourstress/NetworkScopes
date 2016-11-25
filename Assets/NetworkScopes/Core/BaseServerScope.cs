@@ -8,7 +8,6 @@ namespace NetworkScopes
 		public void Initialize()
 		{
 		}
-//		public void AddAuthenticator
 	}
 
 	public class ServerScope<TPeer> : BaseServerScope where TPeer : IPeer, new()
