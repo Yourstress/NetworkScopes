@@ -21,7 +21,7 @@ namespace NetworkScopes.CodeProcessing
 		public static ScopeDefinition NewClientScopeWriter(Type scopeType)
 		{
 			ScopeDefinition clientScope = new ScopeDefinition(scopeType, true, true);
-			clientScope.SetBaseClass(typeof(ClientScope));
+			clientScope.SetBaseClass(typeof(BaseClientScope));
 			return clientScope;
 		}
 

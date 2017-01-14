@@ -1,7 +1,12 @@
-﻿
-namespace NetworkScopes
+﻿using System;
+
+namespace AssemblyCSharp
 {
-	public interface IClientScope
+	public class IClientScope
 	{
+		public IClientScope ()
+		{
+		}
 	}
 }
+

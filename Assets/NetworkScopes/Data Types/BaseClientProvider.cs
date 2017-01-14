@@ -17,9 +17,13 @@ namespace NetworkScopes
 		public bool enableLogging;
 
 		protected IClientCallbackHandler callbackHandler { get; private set; }
-
 		protected abstract void ConnectClient(string hostname, int port);
 		protected abstract void DisconnectClient();
+
+		public TClientScope CreateScope<TClientScope>() where TClientScope : BaseClientScope, new()
+		{
+			return new TClientScope();
+		}
 
 		public void Connect(string serverHostname, int serverPort)
 		{
@@ -52,8 +56,6 @@ namespace NetworkScopes
 			DisconnectClient();
 		}
 
-		public abstract void SendRaw (INetworkWriter writer);
-
 		#region IClientCallbacks implementation
 		public void OnConnect ()
 		{
@@ -62,7 +64,7 @@ namespace NetworkScopes
 
 		public void OnDisconnect ()
 		{
-			OnDisconnect();
+			OnDisconnected();
 		}
 
 		public void OnReceiveRaw (INetworkReader reader)
@@ -70,7 +72,5 @@ namespace NetworkScopes
 			UnityEngine.Debug.Log("Received something that starts with " + reader.ReadChar());
 		}
 		#endregion
-
-		public abstract INetworkWriter CreateNetworkWriter();
 	}
 }

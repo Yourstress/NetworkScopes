@@ -6,10 +6,12 @@ namespace NetworkScopes.UNet
 	public class UNetNetworkWriter : INetworkWriter
 	{
 		private NetworkWriter writer;
+		private byte[] data = null;
 
-		public UNetNetworkWriter ()
+		public UNetNetworkWriter (short msgType)
 		{
 			writer = new NetworkWriter ();
+			writer.StartMessage(msgType);
 		}
 
 		public void WriteString (string value)
@@ -49,7 +51,13 @@ namespace NetworkScopes.UNet
 
 		public byte[] GetBytes()
 		{
-			return writer.ToArray();
+			if (data != null)
+			{
+				writer = null;
+				data = writer.AsArray();
+			}
+			
+			return data;
 		}
 	}
 }

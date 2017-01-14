@@ -6,10 +6,11 @@ namespace NetworkScopes
 
 	public class ReflectionUtility
 	{
+		public static Type writerType { get { return typeof(INetworkWriter); } }
+		public static Type readerType { get { return typeof(INetworkReader); } }
+
 		public static MethodInfo FindSerializer(Type type)
 		{
-			Type writerType = typeof(INetworkWriter);
-
 			return FindMethodWithParameterType(writerType.GetMethods(), type);
 		}
 
@@ -19,7 +20,7 @@ namespace NetworkScopes
 			{
 				ParameterInfo[] methodParams = methods[x].GetParameters();
 
-				if (methodParams.Length == 1 && methodParams[x].ParameterType == type)
+				if (methodParams.Length == 1 && methodParams[0].ParameterType == type)
 					return methods[x];
 			}
 			return null;

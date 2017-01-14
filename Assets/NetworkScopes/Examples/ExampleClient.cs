@@ -10,7 +10,7 @@ namespace MyCompany
 
 		public ExampleClient()
 		{
-			client = Network.CreateClient<UNetClientProvider>();
+			client = Network.CreateBareboneClient<UNetClientProvider>();
 
 			client.Connect("127.0.0.1", 7000);
 		}

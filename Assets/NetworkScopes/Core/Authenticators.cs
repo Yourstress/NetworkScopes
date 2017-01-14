@@ -33,7 +33,7 @@ namespace NetworkScopes
 
 		public void Authenticate(INetworkWriter writer)
 		{
-			client.SendRaw(writer);
+//			client.SendRaw(writer);
 		}
 	}
 

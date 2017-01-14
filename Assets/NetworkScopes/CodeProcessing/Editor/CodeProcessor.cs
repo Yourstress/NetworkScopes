@@ -60,7 +60,7 @@ namespace NetworkScopes.CodeProcessing
 								serverAuthScope.Name += "_Server";
 								abstractScopes.Add(serverAuthScope);
 								ScopeDefinition authConcrete = ScopeDefinition.NewAuthenticatorScope(t, false, false);
-//								authConcrete.Name = authConcrete.scopeType.Name;
+								authConcrete.BaseClass = serverAuthScope.Name;
 								authConcrete.IsAbstract = false;
 								abstractScopes.Add(authConcrete);
 
@@ -79,7 +79,26 @@ namespace NetworkScopes.CodeProcessing
 									MethodDefinition methodDef = clientAuthScope.AddMethod(method, false, false);
 									methodDef.ReturnType = "void";
 
-//									methodDef.instructions.AddMethodCallWithAssignment("writer", typeof(INetworkWriter), "writer", false,
+									ParameterInfo[] methodParams = method.GetParameters();
+
+									if (methodParams.Length == 0)
+										continue;
+									
+									methodDef.instructions.AddInstruction("INetworkWriter writer = client.CreateNetworkWriter(12. 0);");
+
+									for (int x = 0; x < methodParams.Length; x++)
+									{
+										if (methodParams[x].IsOut)
+											continue;
+										
+										Type paramType = methodParams[x].ParameterType;
+										if (paramType.IsByRef)
+											paramType = paramType.GetElementType();
+
+										methodDef.instructions.AddMethodCall("writer", ReflectionUtility.FindSerializer(paramType), methodParams[x].Name);
+									}
+
+									methodDef.instructions.AddInstruction("client.SendNetworkWriter(writer);");
 								}
 								
 								abstractScopes.Add(clientAuthScope);
@@ -94,7 +113,9 @@ namespace NetworkScopes.CodeProcessing
 			}
 		}
 
-		[MenuItem("Network Scopes/Generate Code")]
+
+
+		[MenuItem("Network Scopes/Generate Code %&#c")]
 		public static void GenerateCode()
 		{
 			CodeProcessor processor = new CodeProcessor();
@@ -104,7 +125,7 @@ namespace NetworkScopes.CodeProcessing
 		}
 
 
-		[MenuItem("Network Scopes/Print Preview Code")]
+		[MenuItem("Network Scopes/Print Preview Code %&#p")]
 		[UnityEditor.Callbacks.DidReloadScripts]
 		public static void PrintPreviewCode()
 		{

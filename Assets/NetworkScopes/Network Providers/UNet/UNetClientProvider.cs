@@ -26,17 +26,6 @@ namespace NetworkScopes.UNet
 			client.Disconnect();
 		}
 
-		public override void SendRaw (INetworkWriter writer)
-		{
-			byte[] data = writer.GetBytes();
-			client.SendBytes(data, data.Length, 0);
-		}
-
-		public override INetworkWriter CreateNetworkWriter ()
-		{
-			return new UNetNetworkWriter();
-		}
-
 		#region Internals
 		void SetupClient()
 		{
@@ -46,8 +35,8 @@ namespace NetworkScopes.UNet
 
 			client.Configure (topology);
 
-			client.RegisterHandler (UNetMsgType.Connect, UnetOnConnect);
-			client.RegisterHandler (UNetMsgType.Disconnect, UnetOnDisconnect);
+			client.RegisterHandler (MsgType.Connect, UnetOnConnect);
+			client.RegisterHandler (MsgType.Disconnect, UnetOnDisconnect);
 //			client.RegisterHandler (UNetMsgType.Error, UnetOnError);
 //
 //			client.RegisterHandler (UNetMsgType.EnterScope, UnetOnEnterScope);
@@ -56,7 +45,7 @@ namespace NetworkScopes.UNet
 //			client.RegisterHandler (UNetMsgType.DisconnectMessage, UnetOnDisconnectMessage);
 //			client.RegisterHandler (UNetMsgType.RedirectMessage, UnetOnRedirectMessage);
 //			
-			client.RegisterHandler (UNetMsgType.ScopeSignal, UnetOnScopeSignal);
+			client.RegisterHandler (UnetUtil.ValidateMsgType(NetworkMsgType.ScopeSignal), UnetOnScopeSignal);
 		}
 		#endregion
 
@@ -73,6 +62,7 @@ namespace NetworkScopes.UNet
 
 		void UnetOnScopeSignal(NetworkMessage msg)
 		{
+			UnityEngine.Debug.Log("Receive");
 			OnReceiveRaw(new UNetNetworkReader(msg.reader));
 		}
 		#endregion

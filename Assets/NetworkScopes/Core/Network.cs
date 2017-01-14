@@ -3,7 +3,7 @@ namespace NetworkScopes
 {
 	public static class Network
 	{
-		public static NetworkServer CreateServer()
+		public static NetworkServer CreateBareboneServer()
 		{
 			return new NetworkServer();
 		}
@@ -18,7 +18,7 @@ namespace NetworkScopes
 			return server;
 		}
 
-		public static TClientProvider CreateClient<TClientProvider>() where TClientProvider : IClientProvider, new()
+		public static TClientProvider CreateBareboneClient<TClientProvider>() where TClientProvider : IClientProvider, new()
 		{
 			return new TClientProvider();
 		}

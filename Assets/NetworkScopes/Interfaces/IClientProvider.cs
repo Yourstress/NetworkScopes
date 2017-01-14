@@ -13,6 +13,5 @@ namespace NetworkScopes
 
 		void Connect(string hostname, int port);
 		void Disconnect();
-		void SendRaw(INetworkWriter writer);
 	}
 }

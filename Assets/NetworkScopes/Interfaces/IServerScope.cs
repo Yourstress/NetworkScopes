@@ -1,7 +1,12 @@
-﻿
-namespace NetworkScopes
+﻿using System;
+
+namespace AssemblyCSharp
 {
-	public interface IServerScope<TPeer> where TPeer : IPeer
+	public class IServerScope
 	{
+		public IServerScope ()
+		{
+		}
 	}
 }
+

@@ -21,9 +21,9 @@ namespace NetworkScopes.UNet
 
 			NetworkServer.Listen(listenPort);
 
-			NetworkServer.RegisterHandler(UNetMsgType.Connect, UnetOnConnect);
-			NetworkServer.RegisterHandler(UNetMsgType.Disconnect, UnetOnDisconnect);
-			NetworkServer.RegisterHandler(UNetMsgType.ScopeSignal, UnetOnScopeSignal);
+			NetworkServer.RegisterHandler(MsgType.Connect, UnetOnConnect);
+			NetworkServer.RegisterHandler(MsgType.Disconnect, UnetOnDisconnect);
+			NetworkServer.RegisterHandler(UnetUtil.ValidateMsgType(NetworkMsgType.ScopeSignal), UnetOnScopeSignal);
 
 		}
 		public override void StopServer ()
