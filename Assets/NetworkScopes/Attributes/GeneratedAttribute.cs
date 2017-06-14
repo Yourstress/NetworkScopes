@@ -1,9 +1,9 @@
-﻿
+using System;
+
 namespace NetworkScopes
 {
-	using System;
-
 	public class GeneratedAttribute : Attribute
 	{
+
 	}
 }

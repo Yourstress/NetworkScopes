@@ -6,3 +6,4 @@ obj/
 *.csproj
 *.userprefs
 *.sln
+*.DS_Store

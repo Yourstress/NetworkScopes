@@ -1,12 +1,14 @@
-﻿using System;
-
-namespace AssemblyCSharp
+﻿
+namespace NetworkScopes
 {
-	public class IClientScope
+	public interface IClientScope : IBaseScope
 	{
-		public IClientScope ()
-		{
-		}
+		ScopeIdentifier scopeIdentifier { get; }
+		ScopeChannel currentChannel { get; }
+
+		void Initialize(IClientSignalProvider serviceProvider, ScopeIdentifier scopeIdentifier);
+		void EnterScope(ScopeChannel channel);
+		void ExitScope();
+		void ProcessSignal(ISignalReader signal);
 	}
 }
-

@@ -1,78 +1,70 @@
-﻿
+
+using System;
+using System.Collections.Generic;
+using NetworkScopes.ServiceProviders.Lidgren;
+using UnityEngine;
+
 namespace NetworkScopes
 {
-	using System;
-	using System.Collections.Generic;
-
-	public class NetworkServer : IServerCallbacks
+	public abstract class NetworkServer : IServerProvider, IServerSignalProvider
 	{
-		private List<IServerProvider> serverProviders;
-		private List<BaseServerScope> scopes;
+		// IServerProvider
+		public abstract bool IsListening { get; }
+		public abstract bool StartListening(int port);
+		public abstract void StopListening();
 
-		public BaseServerScope defaultScope;
-		private Dictionary<IServerAuthenticator,BaseServerScope> authenticatorTargets = null;
+		// IServerSignalProvider
+		public abstract ISignalWriter CreateSignal(short scopeIdentifier);
+		public abstract void SendSignal(PeerTarget target, ISignalWriter writer);
 
-		public event Action<PeerEntity> OnPeerEntityConnected = delegate {};
-		public event Action<PeerEntity> OnPeerEntityDisconnected = delegate {};
+		public event Action<INetworkPeer> OnPeerConnected = delegate { };
+		public event Action<INetworkPeer> OnPeerDisconnected = delegate { };
 
-		public NetworkServer(int serverCapacity = 1)
+		protected readonly List<IServerScope> registeredScopes = new List<IServerScope>();
+
+		protected IServerScope defaultScope;
+
+		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()
 		{
-			scopes = new List<BaseServerScope>();
-			serverProviders = new List<IServerProvider>(serverCapacity);
+			TServerScope newScope = new TServerScope();
+
+			if (defaultScope == null)
+				defaultScope = newScope;
+
+			// TODO: create channel for each registered scope -- channel hard coded to 0!!
+			newScope.InitializeServerScope(this, scopeIdentifier, 0);
+
+			registeredScopes.Add(newScope);
+
+			return newScope;
 		}
 
-		public TServerProvider AddServerProvider<TServerProvider>() where TServerProvider : IServerProvider, new()
+		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
 		{
-			TServerProvider provider = new TServerProvider();
-			provider.Initialize(this);
-			serverProviders.Add(provider);
-			return provider;
+			if (!registeredScopes.Remove(scope))
+				throw new Exception(string.Format("The scope {0} is not registered.", scope));
 		}
 
-		public TServerScope CreateScope<TServerScope>(byte scopeIdentifier, bool setAsDefault) where TServerScope : BaseServerScope, new()
+		protected void PeerConnected(INetworkPeer peer)
 		{
-			TServerScope scope = new TServerScope();
+			OnPeerConnected(peer);
 
-			scope.Initialize();
+			if (defaultScope == null)
+				throw new Exception("Default scope is not yet set.");
 
-			// if specified, set as default scope for newly connected players
-			if (setAsDefault || defaultScope == null)
-				defaultScope = scope;
-
-			scopes.Add(scope);
-
-			return scope;
+			// add the peer to the default scope
+			defaultScope.AddPeer(peer);
 		}
 
-		public TAuthenticator UseAuthenticator<TAuthenticator>(BaseServerScope targetScope) where TAuthenticator : IServerAuthenticator, new()
+		protected void PeerDisconnected(INetworkPeer peer)
 		{
-			TAuthenticator authenticator = new TAuthenticator();
-
-			// assign the default scope to which we'll hand-over the peers
-			authenticator.targetScope = targetScope;
-
-			if (!scopes.Contains(targetScope))
-				throw new System.Exception("Could not register authenticator because the target scope was not initialized.");
-
-			// register the authenticator as an entry point for new peers
-			if (authenticatorTargets == null)
-				authenticatorTargets = new Dictionary<IServerAuthenticator, BaseServerScope>(4);
-			
-			authenticatorTargets[authenticator] = targetScope;
-
-			return authenticator;
+			OnPeerDisconnected(peer);
 		}
 
-		#region IServerCallbacks implementation
-		public void OnConnected (PeerEntity entity)
+		// Static server factory methods
+		public static LidgrenServer CreateLidgrenServer()
 		{
-			OnPeerEntityConnected(entity);
+			return new LidgrenServer();
 		}
-
-		public void OnDisconnected (PeerEntity entity)
-		{
-			OnPeerEntityDisconnected(entity);
-		}
-		#endregion
 	}
 }
