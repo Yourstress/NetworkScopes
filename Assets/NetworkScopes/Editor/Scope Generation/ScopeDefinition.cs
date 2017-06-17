@@ -95,7 +95,7 @@ namespace NetworkScopes.CodeGeneration
 
 				// create signal command
 				senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
-					string.Format("CreateSignal({0})", senderMethod.Name.GetHashCode()));
+					string.Format("CreateSignal({0} /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
 
 				// write parameters one by one as received
 				foreach (ParameterInfo param in method.GetParameters())

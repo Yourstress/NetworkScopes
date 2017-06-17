@@ -9,13 +9,13 @@ namespace NetworkScopes.CodeGeneration
 {
 	public class NetworkScopeProcessor
 	{
-		[InitializeOnLoadMethod]
-		public static void GenerateNetworkScopes()
-		{
-			ClearLog();
-
-			GenerateNetworkScopes(!ScopeGenerationConfig.AutoGenerateScopeClasses);
-		}
+//		[InitializeOnLoadMethod]
+//		public static void GenerateNetworkScopes()
+//		{
+//			ClearLog();
+//
+//			GenerateNetworkScopes(!ScopeGenerationConfig.AutoGenerateScopeClasses);
+//		}
 
 		public static void GenerateNetworkScopes(bool logOnly)
 		{
@@ -43,7 +43,7 @@ namespace NetworkScopes.CodeGeneration
 				{
 					case SerializationFailureReason.TypeNotSerializable:
 						Debug.LogWarningFormat(
-							"The type <b>{0}</b> can not be serialized because it does not implement <b>ISerializable</b>.", kvp.Key.Name);
+							"The type <b>{0}</b> can not be serialized because it does not implement <b>ISerializable</b>. Use the <b>[NetworkSerialize]</b> to generate serialization code or implement <b>ISerializable</b>", kvp.Key.Name);
 						break;
 //					case SerializationFailureReason.TypeSerializationPendingGeneration:
 //						Debug.LogWarningFormat(
