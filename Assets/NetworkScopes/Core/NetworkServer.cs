@@ -22,7 +22,7 @@ namespace NetworkScopes
 
 		protected readonly List<IServerScope> registeredScopes = new List<IServerScope>();
 
-		protected IServerScope defaultScope;
+		public IServerScope defaultScope;
 
 		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()
 		{
