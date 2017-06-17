@@ -41,15 +41,16 @@ namespace NetworkScopes
 		{
 			public Deserializer(Type scopeType)
 			{
-				scopeType = scopeType.BaseType;
 				List<MethodInfo> methods = scopeType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).ToList();
 
 				foreach (MethodInfo method in methods)
 				{
-					// skip nonpublic or any send/receive methods
+					// skip public non-receive functions
 					if (method.IsPublic || !method.Name.StartsWith("Receive_"))
+					{
 						continue;
-
+					}
+					
 					string name = method.Name.Remove(0, 8);
 					Add(name.GetHashCode(), method);
 				}
