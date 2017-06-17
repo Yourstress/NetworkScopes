@@ -77,6 +77,7 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 					}
 					else if (status == NetConnectionStatus.Disconnected)
 					{
+						WillDisconnect();
 						OnDisconnected();
 					}
 

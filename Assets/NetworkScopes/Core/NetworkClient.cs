@@ -108,6 +108,21 @@ namespace NetworkScopes
 			}
 		}
 
+		protected void WillDisconnect()
+		{
+			foreach (KeyValuePair<ScopeChannel,IClientScope> activeScopeKvp in activeScopes)
+			{
+				// exit the scope
+				IClientScope activeScope = activeScopeKvp.Value;
+				activeScope.ExitScope();
+
+				// and add this scope to the inactives list
+				inactiveScopes.Add(activeScope.scopeIdentifier, activeScope);
+			}
+
+			activeScopes.Clear();
+		}
+
 		// Static factory methods
 		public static LidgrenClient CreateLidgrenClient()
 		{
