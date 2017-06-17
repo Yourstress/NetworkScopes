@@ -12,7 +12,8 @@ public class ExampleSimpleNetwork : MonoBehaviour
 
 	void Start()
 	{
-//		_server.RegisterScope<ExampleServerScope>(1);
+		_server.RegisterScope<ExampleServerScope>(1);
+		_client.RegisterScope<ExampleClientScope>(1);
 	}
 
 	void OnGUI()
