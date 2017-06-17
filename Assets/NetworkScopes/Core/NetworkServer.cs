@@ -22,6 +22,8 @@ namespace NetworkScopes
 
 		protected readonly List<IServerScope> registeredScopes = new List<IServerScope>();
 
+		public int PeerCount { get; private set; }
+
 		public IServerScope defaultScope;
 
 		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()
@@ -49,6 +51,8 @@ namespace NetworkScopes
 		{
 			OnPeerConnected(peer);
 
+			PeerCount++;
+
 			if (defaultScope == null)
 				throw new Exception("Default scope is not yet set.");
 
@@ -58,6 +62,10 @@ namespace NetworkScopes
 
 		protected void PeerDisconnected(INetworkPeer peer)
 		{
+			peer.TriggerDisconnectEvent();
+
+			PeerCount--;
+
 			OnPeerDisconnected(peer);
 		}
 

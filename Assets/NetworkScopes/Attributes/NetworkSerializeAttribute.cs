@@ -12,11 +12,11 @@ namespace NetworkScopes
 
 	public class NetworkSerializeAttribute : Attribute
 	{
-		private NetworkSerializeType _serializeType;
+		public NetworkSerializeType serializeType;
 
 		public NetworkSerializeAttribute(NetworkSerializeType serializeType = NetworkSerializeType.SerializableFields)
 		{
-			_serializeType = serializeType;
+			this.serializeType = serializeType;
 		}
 	}
 }

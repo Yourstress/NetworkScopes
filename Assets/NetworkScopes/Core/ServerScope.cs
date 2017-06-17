@@ -7,30 +7,42 @@ namespace NetworkScopes
 {
 	public abstract class ServerScope<TScopeSender> : IServerScope where TScopeSender : IScopeSender
 	{
+		public string name { get { return GetType().Name; } }
+		public bool isActive { get; private set; }
+
 		protected abstract TScopeSender GetScopeSender();
 
 		private IServerSignalProvider _signalProvider;
 
 		private PeerTarget peerTarget = new PeerTarget();
 
-		private List<INetworkPeer> _peers = new List<INetworkPeer>();
+		public List<INetworkPeer> peers { get; private set; }
 
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel currentChannel { get; private set; }
+
+		protected ServerScope()
+		{
+			peers = new List<INetworkPeer>();
+		}
 
 		public void InitializeServerScope(IServerSignalProvider signalProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel)
 		{
 			this.scopeIdentifier = scopeIdentifier;
 			this.currentChannel = scopeChannel;
 			_signalProvider = signalProvider;
+
+			SignalMethodBinder.BindScope(GetType());
+
+			isActive = true;
 		}
 
 		public void AddPeer(INetworkPeer peer)
 		{
-			if (_peers.Contains(peer))
+			if (peers.Contains(peer))
 				throw new Exception("Peer already exists in this scope.");
 
-			_peers.Add(peer);
+			peers.Add(peer);
 
 			// register to disconnect event to remove the peer from this scope when disconnected
 			peer.OnDisconnect += RemovePeer;
@@ -44,7 +56,7 @@ namespace NetworkScopes
 
 		public void RemovePeer(INetworkPeer peer)
 		{
-			if (!_peers.Remove(peer))
+			if (!peers.Remove(peer))
 				throw new Exception("Peer has not been added to this scope and cannot be removed.");
 
 			// unregister disconnect event upon removal of peer
@@ -78,7 +90,7 @@ namespace NetworkScopes
 
 		public TScopeSender SendToAll()
 		{
-			peerTarget.TargetPeerGroup = _peers;
+			peerTarget.TargetPeerGroup = peers;
 			return GetScopeSender();
 		}
 

@@ -2,10 +2,14 @@ using System;
 
 namespace NetworkScopes
 {
-	public interface INetworkPeer
-	{
-		void SendSignal(ISignalWriter signal);
+    public interface INetworkPeer
+    {
+        string ipAddress { get; }
 
-		event Action<INetworkPeer> OnDisconnect;
-	}
+        void Disconnect();
+        void TriggerDisconnectEvent();
+        void SendSignal(ISignalWriter signal);
+
+        event Action<INetworkPeer> OnDisconnect;
+    }
 }

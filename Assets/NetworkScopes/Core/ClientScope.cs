@@ -5,6 +5,9 @@ namespace NetworkScopes
 {
 	public abstract class ClientScope<TScopeSender> : IClientScope where TScopeSender : IScopeSender
 	{
+		public string name { get { return GetType().Name; } }
+		public bool isActive { get; private set; }
+
 		protected abstract TScopeSender GetScopeSender();
 
 		public TScopeSender SendToServer
@@ -17,7 +20,7 @@ namespace NetworkScopes
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel currentChannel { get; private set; }
 
-		public void Initialize(IClientSignalProvider serviceProvider, ScopeIdentifier scopeIdentifier)
+		void IClientScope.Initialize(IClientSignalProvider serviceProvider, ScopeIdentifier scopeIdentifier)
 		{
 			this.scopeIdentifier = scopeIdentifier;
 
@@ -51,9 +54,7 @@ namespace NetworkScopes
 			Debug.Log("[EXITED] " + GetType().Name);
 		}
 
-		public bool isActive { get; private set; }
-
-		public void EnterScope(ScopeChannel channel)
+		void IClientScope.EnterScope(ScopeChannel channel)
 		{
 			if (isActive)
 				throw new Exception("Failed to enter active scope.");
@@ -64,7 +65,7 @@ namespace NetworkScopes
 			OnEnterScope();
 		}
 
-		public void ExitScope()
+		void IClientScope.ExitScope()
 		{
 			if (!isActive)
 				throw new Exception("Failed to exit inactive scope.");
@@ -74,7 +75,7 @@ namespace NetworkScopes
 			OnExitScope();
 		}
 
-		public void ProcessSignal(ISignalReader signal)
+		void IClientScope.ProcessSignal(ISignalReader signal)
 		{
 			SignalMethodBinder.Invoke(this, GetType(), signal);
 			// TODO: read the signal id and find the method associated
