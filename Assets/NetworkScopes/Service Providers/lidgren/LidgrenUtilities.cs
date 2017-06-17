@@ -43,7 +43,6 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 				//					break;
 				//				case NetIncomingMessageType.ConnectionLatencyUpdated:
 				//					break;
-					break;
 				default:
 					Debug.Log(prefix + "Unhandled message of type " + msg.MessageType);
 					break;
