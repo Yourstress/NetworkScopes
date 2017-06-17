@@ -5,12 +5,17 @@ using UnityEngine;
 
 public class ExampleSimpleNetwork : MonoBehaviour
 {
-	private NetworkServer _server = NetworkServer.CreateLidgrenServer();
-	private NetworkClient _client = NetworkClient.CreateLidgrenClient();
+	protected NetworkServer _server = NetworkServer.CreateLidgrenServer();
+	protected NetworkClient _client = NetworkClient.CreateLidgrenClient();
 
 	public int port = 7000;
 
 	void Start()
+	{
+		RegisterScopes();
+	}
+
+	public virtual void RegisterScopes()
 	{
 		_server.RegisterScope<ExampleServerScope>(1);
 		_client.RegisterScope<ExampleClientScope>(1);
@@ -18,11 +23,18 @@ public class ExampleSimpleNetwork : MonoBehaviour
 
 	void OnGUI()
 	{
-		DrawServer();
-		DrawClient();
+		GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
+		GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+		DrawServerGUI();
+		GUILayout.EndVertical();
+		GUILayout.Space(18);
+		GUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+		DrawClientGUI();
+		GUILayout.EndVertical();
+		GUILayout.EndVertical();
 	}
 
-	private void DrawClient()
+	protected virtual void DrawClientGUI()
 	{
 		GUILayout.Label(string.Format("Connection status: {0}", _client.IsConnected ? "Online":"Offline"));
 
@@ -40,7 +52,7 @@ public class ExampleSimpleNetwork : MonoBehaviour
 		}
 	}
 
-	private void DrawServer()
+	protected virtual void DrawServerGUI()
 	{
 		GUILayout.Label(string.Format("Server status: {0}", _server.IsListening ? "Running" : "Stopped"));
 

@@ -25,7 +25,7 @@ namespace MyExamples
 
 		void ISender.JoinGame(string gameName, int gameID)
 		{
-			ISignalWriter writer = CreateSignal(-361767828);
+			ISignalWriter writer = CreateSignal(-1337500580 /*hash 'JoinGame'*/);
 			writer.WriteString(gameName);
 			writer.WriteInt32(gameID);
 			SendSignal(writer);

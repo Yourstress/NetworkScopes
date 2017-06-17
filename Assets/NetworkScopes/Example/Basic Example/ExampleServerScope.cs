@@ -24,7 +24,7 @@ namespace MyExamples
 
 		void ISender.OnPlayerJoined(string playerName, int playerID)
 		{
-			ISignalWriter writer = CreateSignal(-2096698055);
+			ISignalWriter writer = CreateSignal(450541865 /*hash 'OnPlayerJoined'*/);
 			writer.WriteString(playerName);
 			writer.WriteInt32(playerID);
 			SendSignal(writer);
@@ -32,7 +32,7 @@ namespace MyExamples
 
 		void ISender.OnPlayerDataReceived(PlayerData playerData)
 		{
-			ISignalWriter writer = CreateSignal(1703372187);
+			ISignalWriter writer = CreateSignal(-1141998197 /*hash 'OnPlayerDataReceived'*/);
 			playerData.Serialize(writer);
 			SendSignal(writer);
 		}
