@@ -108,7 +108,6 @@ namespace NetworkScopes.CodeGeneration
 				else
 				{
 					// allocate new promise before creating the signal
-					string typeName = method.ReturnType.GetReadableName();
 					TypeDefinition promiseType = SerializationProvider.GetPromiseType(method.ReturnType);
 
 					// [PromiseType] promise = new [PromiseType]();
@@ -186,9 +185,6 @@ namespace NetworkScopes.CodeGeneration
 				}
 			}
 
-			// use to store the parameters that make up each read command (per method)
-			List<string> tempParamNames = new List<string>();
-
 			// write receiver methods that take an ISignalReader param to read the signal's parameters, then invoke the abstract receiver method
 			foreach (MethodInfo method in methods)
 			{
@@ -217,7 +213,9 @@ namespace NetworkScopes.CodeGeneration
 
 			MethodBody body = receiver.Body;
 
+			// use to store the parameters that make up each read command (per method)
 			List<string> tempParamNames = new List<string>();
+
 			foreach (ParameterInfo param in method.GetParameters())
 			{
 				serializer.AddDeserializationCommands(body, param.Name, param.ParameterType);

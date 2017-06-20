@@ -178,8 +178,7 @@ namespace NetworkScopes.CodeGeneration
 		}
 
 		public static TypeDefinition GetPromiseType(Type type)
-		{
-			TypeDefinition promiseType;
+		{ 
 			Type mainPromiseType = (type.Namespace == "System") ? typeof(ValuePromise<>) : typeof(ObjectPromise<>);
 
 			return TypeDefinition.MakeGenericType(mainPromiseType, type.GetReadableName());
