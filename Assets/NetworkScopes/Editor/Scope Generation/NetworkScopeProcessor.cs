@@ -25,6 +25,7 @@ namespace NetworkScopes.CodeGeneration
 			foreach (ScopeDefinition scopeGen in NetworkScopeUtility.FindScopeGenerationConfigs(serializer))
 			{
 				ScriptWriter writer = scopeGen.scopeDefinition.ToScriptWriter();
+				writer.WriteAt(0, scopeGen.scopeDefinition.type.Name+Environment.NewLine);
 
 				if (logOnly)
 					Debug.Log(writer);

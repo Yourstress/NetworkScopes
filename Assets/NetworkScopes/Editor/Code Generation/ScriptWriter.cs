@@ -37,6 +37,11 @@ namespace NetworkScopes.CodeGeneration
 			WriteTabs();
 		}
 
+		public void WriteAt(int index, string text)
+		{
+			sb.Insert(index, text);
+		}
+
 		public void Write(string text)
 		{
 			sb.Append(text);
