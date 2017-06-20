@@ -1,7 +1,5 @@
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using Microsoft.CSharp;
 
 namespace NetworkScopes.CodeGeneration
 {
@@ -76,7 +74,36 @@ namespace NetworkScopes.CodeGeneration
 
 		private void AddRawInstruction(string instruction)
 		{
+			if (indentStr.Length > 0)
+				instruction = indentStr + instruction;
+
 			instructions.Add(instruction);
+		}
+
+		private string indentStr = "";
+
+		private void Indent()
+		{
+			indentStr += "\t";
+		}
+
+		private void Unindent()
+		{
+			if (indentStr.Length >= 1)
+				indentStr = indentStr.Remove(indentStr.Length - 1, 1);
+		}
+
+		public void BeginForIntLoop(string variableName, string startValue, string maxValueExclusive)
+		{
+			AddRawInstruction(string.Format("for (int {0} = {1}; {0} < {2}; {0}++)", variableName, startValue, maxValueExclusive));
+			AddRawInstruction("{");
+			Indent();
+		}
+
+		public void EndForIntLoop()
+		{
+			Unindent();
+			AddRawInstruction("}");
 		}
 	}
 }
