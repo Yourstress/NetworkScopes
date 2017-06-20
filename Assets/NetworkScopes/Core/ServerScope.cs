@@ -14,12 +14,16 @@ namespace NetworkScopes
 
 		private IServerSignalProvider _signalProvider;
 
-		private PeerTarget peerTarget = new PeerTarget();
+		protected PeerTarget peerTarget = new PeerTarget();
 
 		public List<INetworkPeer> peers { get; private set; }
 
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel currentChannel { get; private set; }
+
+		public INetworkPeer SenderPeer { get; private set; }
+
+		private NetworkPromiseHandler promiseHandler = new NetworkPromiseHandler();
 
 		protected ServerScope()
 		{
@@ -94,7 +98,6 @@ namespace NetworkScopes
 			return GetScopeSender();
 		}
 
-		// TODO: pass down signal options (which scope and which signal method)
 		protected ISignalWriter CreateSignal(int signalID)
 		{
 			// return writer based on the current network medium (service provider)
@@ -103,20 +106,37 @@ namespace NetworkScopes
 			return signal;
 		}
 
+		protected ISignalWriter CreatePromiseSignal(int signalID, INetworkPromise promise)
+		{
+			ISignalWriter signal = CreateSignal(signalID);
+			signal.WriteInt32(promiseHandler.EnqueuePromise(promise));
+			return signal;
+		}
+
+		protected void SendSignal(ISignalWriter signal, INetworkPeer targetPeer)
+		{
+			peerTarget.TargetPeer = targetPeer;
+			SendSignal(signal);
+		}
+
 		protected void SendSignal(ISignalWriter signal)
 		{
 			// TODO: send out the signal using the service provider
 			_signalProvider.SendSignal(peerTarget, signal);
 		}
 
-		public void ReceiveSignal(ISignalReader reader)
+		protected void ReceivePromise(ISignalReader reader)
 		{
-			Debug.Log("Server received " + reader);
-			// TODO: read the signal id and find the method associated
+			int promiseID = reader.ReadInt32();
 
-			// TODO: read parameters from the reader based on the expected methods
+			promiseHandler.DequeueAndReceivePromise(promiseID, reader);
+		}
 
-			// TODO: call method with parameters
+		void IServerScope.ProcessSignal(ISignalReader signal, INetworkPeer peer)
+		{
+			SenderPeer = peer;
+
+			SignalMethodBinder.Invoke(this, GetType(), signal);
 		}
 	}
 }

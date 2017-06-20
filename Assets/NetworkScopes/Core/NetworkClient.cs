@@ -51,7 +51,6 @@ namespace NetworkScopes
 			else
 			{
 				Debug.LogWarningFormat("Client could not process signal on unknown channel {0}.", targetChannel);
-				Debug.Log("Other channel " + activeScopes.ToArray()[0].Key);
 			}
 		}
 

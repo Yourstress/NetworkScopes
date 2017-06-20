@@ -41,7 +41,7 @@ namespace MyExamples
 		{
 		}
 
-		protected void Receive_JoinGame(ISignalReader reader)
+		protected void ReceiveSignal_JoinGame(ISignalReader reader)
 		{
 			string gameName = reader.ReadString();
 			int gameID = reader.ReadInt32();

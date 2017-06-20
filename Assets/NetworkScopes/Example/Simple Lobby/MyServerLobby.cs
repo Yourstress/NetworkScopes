@@ -10,10 +10,8 @@ public class MyServerLobby : ServerScope<MyServerLobby.ISender>, MyServerLobby.I
 		void FoundMatch(LobbyMatch match);
 	}
 
-	public delegate void GetOnlinePlayerCountDelegate();
 	public delegate void LookForMatchDelegate();
 
-	public event GetOnlinePlayerCountDelegate OnGetOnlinePlayerCount = delegate {};
 	public event LookForMatchDelegate OnLookForMatch = delegate {};
 
 	protected override ISender GetScopeSender()
@@ -28,21 +26,26 @@ public class MyServerLobby : ServerScope<MyServerLobby.ISender>, MyServerLobby.I
 		SendSignal(writer);
 	}
 
-	protected virtual void GetOnlinePlayerCount()
+	protected virtual int GetOnlinePlayerCount()
 	{
+		return default(int);
 	}
 
 	protected virtual void LookForMatch()
 	{
 	}
 
-	protected void Receive_GetOnlinePlayerCount(ISignalReader reader)
+	protected void ReceiveSignal_GetOnlinePlayerCount(ISignalReader reader)
 	{
-		OnGetOnlinePlayerCount();
-		GetOnlinePlayerCount();
+		int promiseID = reader.ReadPromiseID();
+		int promiseValue = GetOnlinePlayerCount();
+		ISignalWriter writer = CreateSignal(-1825208728 /*hash '#GetOnlinePlayerCount'*/);
+		writer.WriteInt32(promiseID);
+		writer.WriteInt32(promiseValue);
+		SendSignal(writer, SenderPeer);
 	}
 
-	protected void Receive_LookForMatch(ISignalReader reader)
+	protected void ReceiveSignal_LookForMatch(ISignalReader reader)
 	{
 		OnLookForMatch();
 		LookForMatch();

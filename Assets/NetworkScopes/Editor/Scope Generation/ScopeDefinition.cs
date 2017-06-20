@@ -61,6 +61,10 @@ namespace NetworkScopes.CodeGeneration
 			foreach (MethodInfo method in otherScopeInterface.GetMethods())
 			{
 				MethodDefinition methodDef = new MethodDefinition(method.Name, AccessModifier.Private);
+
+				if (method.ReturnType != typeof(void))
+					methodDef.ReturnType = SerializationProvider.GetPromiseType(method.ReturnType);
+
 				methodDef.Body = null;
 				methodDef.Parameters.AddRange(method.GetParameters().Select(p => new ParameterDefinition(p.Name, p.ParameterType)));
 				senderInterface.methods.Add(methodDef);
@@ -93,9 +97,30 @@ namespace NetworkScopes.CodeGeneration
 				senderMethod.Name = "ISender." + senderMethod.Name;
 				senderMethod.Parameters.AddRange(method.GetParameters().Select(p => new ParameterDefinition(p.Name, p.ParameterType)));
 
+				bool isPromiseSender = method.ReturnType != typeof(void);
+
 				// create signal command
-				senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
-					string.Format("CreateSignal({0} /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
+				if (!isPromiseSender)
+				{
+					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
+						string.Format("CreateSignal({0} /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
+				}
+				else
+				{
+					// allocate new promise before creating the signal
+					string typeName = method.ReturnType.GetReadableName();
+					TypeDefinition promiseType = SerializationProvider.GetPromiseType(method.ReturnType);
+
+					// [PromiseType] promise = new [PromiseType]();
+					senderMethod.Body.AddAssignmentInstruction(promiseType, "promise", string.Format("new {0}()", promiseType.Name));
+
+					// then call CreatePromiseSignal
+					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
+						string.Format("CreatePromiseSignal({0}, promise /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
+
+					// finally, make sure the method returns a promise type
+					senderMethod.ReturnType = promiseType;
+				}
 
 				// write parameters one by one as received
 				foreach (ParameterInfo param in method.GetParameters())
@@ -106,6 +131,11 @@ namespace NetworkScopes.CodeGeneration
 				// send signal command
 				senderMethod.Body.AddLocalMethodCall("SendSignal", "writer");
 
+				if (isPromiseSender)
+				{
+					senderMethod.Body.AddReturnStatement("promise");
+				}
+
 				scopeDefinition.methods.Add(senderMethod);
 			}
 		}
@@ -114,6 +144,7 @@ namespace NetworkScopes.CodeGeneration
 		{
 			// find all methods defined in the scope's own interface
 			MethodInfo[] methods = scopeInterface.GetMethods();
+			MethodInfo[] promiseMethods = otherScopeInterface.GetMethods().Where(m => m.ReturnType != typeof(void)).ToArray();
 
 			MethodModifier defaultReceiverModifier = (scopeAttribute.defaultReceiveType == SignalReceiveType.AbstractMethod)
 				? MethodModifier.Abstract
@@ -121,10 +152,21 @@ namespace NetworkScopes.CodeGeneration
 
 			bool isEventRaisingScope = scopeAttribute.defaultReceiveType == SignalReceiveType.Event;
 
+			Type voidType = typeof(void);
+
 			// write abstract receiver methods invoked by the raw receiver methods (to be written shortly after)
 			foreach (MethodInfo method in methods)
 			{
 				MethodDefinition methodDef = new MethodDefinition(method.Name, AccessModifier.Protected, defaultReceiverModifier);
+
+				bool mustSendResponse = method.ReturnType != voidType;
+				// if the method has a return type, it must return one, and the result will be sent back to the other scope
+
+				if (mustSendResponse)
+				{
+					methodDef.ReturnType = method.ReturnType;
+					methodDef.Body.AddReturnStatement(string.Format("default({0})", method.ReturnType.GetReadableName()));
+				}
 
 				IEnumerable<ParameterDefinition> paramDefs = method.GetParameters().Select(p => new ParameterDefinition(p.Name, p.ParameterType));
 
@@ -132,7 +174,7 @@ namespace NetworkScopes.CodeGeneration
 				scopeDefinition.methods.Add(methodDef);
 
 				// create delegate for event type if needed
-				if (isEventRaisingScope)
+				if (isEventRaisingScope && !mustSendResponse)
 				{
 					// delegate definition
 					DelegateDefinition delegateDef = new DelegateDefinition(method.Name+"Delegate", paramDefs);
@@ -150,24 +192,73 @@ namespace NetworkScopes.CodeGeneration
 			// write receiver methods that take an ISignalReader param to read the signal's parameters, then invoke the abstract receiver method
 			foreach (MethodInfo method in methods)
 			{
-				MethodDefinition receiver = new MethodDefinition("Receive_" + method.Name, AccessModifier.Protected);
-				receiver.Parameters.Add(new ParameterDefinition("reader", typeof(ISignalReader)));
-
-				tempParamNames.Clear();
-				foreach (ParameterInfo param in method.GetParameters())
-				{
-					serializer.AddDeserializationCommands(receiver.Body, param.Name, param.ParameterType);
-					tempParamNames.Add(param.Name);
-				}
-
-				string[] paramsStr = tempParamNames.ToArray();
-
-				if (isEventRaisingScope)
-					receiver.Body.AddLocalMethodCall("On"+method.Name, paramsStr);
-				receiver.Body.AddLocalMethodCall(method.Name, paramsStr);
-
-				scopeDefinition.methods.Add(receiver);
+				CreateReceiveMethod(method, isEventRaisingScope, false);
 			}
+
+			// write PROMISE RECEIVER methods that take an ISignalReader param - same as above
+			foreach (MethodInfo promiseMethod in promiseMethods)
+			{
+				CreateReceiveMethod(promiseMethod, isEventRaisingScope, true);
+			}
+		}
+
+		private void CreateReceiveMethod(MethodInfo method, bool isEventRaisingScope, bool isPromiseSignal)
+		{
+			bool mustSendResponse = method.ReturnType != typeof(void);
+
+			string receiveMethodName = string.Format("{0}_{1}", (isPromiseSignal ? "ReceivePromise" : "ReceiveSignal"), method.Name);
+
+			MethodDefinition receiver = new MethodDefinition(receiveMethodName, AccessModifier.Protected);
+			receiver.Parameters.Add(new ParameterDefinition("reader", typeof(ISignalReader)));
+
+			// forward promise ID so the other side can correlate promise with an object
+//			if (mustSendResponse)
+//				receiver.Body.AddMethodCall("writer", "WritePromiseIDFromReader", "reader");
+
+			MethodBody body = receiver.Body;
+
+			List<string> tempParamNames = new List<string>();
+			foreach (ParameterInfo param in method.GetParameters())
+			{
+				serializer.AddDeserializationCommands(body, param.Name, param.ParameterType);
+				tempParamNames.Add(param.Name);
+			}
+
+			// call receiving method
+			string[] paramsStr = tempParamNames.ToArray();
+
+
+			if (isEventRaisingScope && !mustSendResponse)
+				body.AddLocalMethodCall("On"+method.Name, paramsStr);
+
+			// promise receiver: notify the promise object that a value has arrived
+			if (isPromiseSignal)
+			{
+				body.AddLocalMethodCall("ReceivePromise", "reader");
+			}
+			// promise sender: if method is defined with a non-void return type, it must send a value back
+			else if (mustSendResponse)
+			{
+				body.AddMethodCallWithAssignment("promiseID", typeof(int).GetReadableName(), "reader", "ReadPromiseID");
+				body.AddLocalMethodCallWithAssignment(method.Name, method.ReturnType.GetReadableName(), "promiseValue", paramsStr);
+
+				string receiveHashName = "#" + method.Name;
+				body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
+					string.Format("CreateSignal({0} /*hash '{1}'*/)", receiveHashName.GetHashCode(), receiveHashName));
+
+				serializer.AddSerializationCommands(body, "promiseID", typeof(int));
+				serializer.AddSerializationCommands(body, "promiseValue", method.ReturnType);
+
+				if (isServerScope)
+					body.AddLocalMethodCall("SendSignal", "writer", "SenderPeer");
+				else
+					body.AddLocalMethodCall("SendSignal", "writer");
+			}
+			// regular signal: call local method
+			else
+				body.AddLocalMethodCall(method.Name, paramsStr);
+
+			scopeDefinition.methods.Add(receiver);
 		}
 
 		public string GetScopeScriptPath()

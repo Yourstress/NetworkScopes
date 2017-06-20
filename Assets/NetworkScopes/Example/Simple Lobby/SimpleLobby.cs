@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class SimpleLobby : ExampleSimpleNetwork
 {
+    public bool autoConnect = true;
     private MyServerLobby serverLobby;
     private MyClientLobby clientLobby;
 
@@ -16,6 +17,12 @@ public class SimpleLobby : ExampleSimpleNetwork
         clientLobby = _client.RegisterScope<MyClientLobby>(1);
 
         clientLobby.OnFoundMatch += OnFoundMatch;
+
+        if (autoConnect)
+        {
+            _server.StartListening(port);
+            _client.Connect("localhost", port);
+        }
     }
 
     private void OnFoundMatch(LobbyMatch match)
@@ -53,7 +60,6 @@ public class SimpleLobby : ExampleSimpleNetwork
                 serverLobby.SendToAll().FoundMatch(new LobbyMatch());
             }
         }
-
     }
 
     protected override void DrawClientGUI()
@@ -61,6 +67,13 @@ public class SimpleLobby : ExampleSimpleNetwork
         base.DrawClientGUI();
 
         DrawScope(clientLobby);
+
+        if (_client.IsConnected)
+        {
+            if (GUILayout.Button("Get Online Players"))
+                clientLobby.SendToServer.GetOnlinePlayerCount()
+                    .ContinueWith(t => { Debug.Log("Online Players: " + t); });
+        }
     }
 
     private void DrawScope(IBaseScope scope)

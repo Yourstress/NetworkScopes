@@ -72,7 +72,7 @@ namespace NetworkScopes.CodeGeneration
 				if (deserializationOptions == DeserializationOptions.DontAllocateVariables)
 					targetMethod.AddMethodCallWithAssignment(variableName, "reader", paramReadMethod.Name);
 				else
-					targetMethod.AddMethodCallWithAssignment(variableType.GetReadableName(), variableName, "reader", paramReadMethod.Name);
+					targetMethod.AddMethodCallWithAssignment(variableName, variableType.GetReadableName(), "reader", paramReadMethod.Name);
 				return;
 			}
 
@@ -175,6 +175,14 @@ namespace NetworkScopes.CodeGeneration
 			members.AddRange(serializableTypes.GetProperties());
 
 			return members.ToArray();
+		}
+
+		public static TypeDefinition GetPromiseType(Type type)
+		{
+			TypeDefinition promiseType;
+			Type mainPromiseType = (type.Namespace == "System") ? typeof(ValuePromise<>) : typeof(ObjectPromise<>);
+
+			return TypeDefinition.MakeGenericType(mainPromiseType, type.GetReadableName());
 		}
 	}
 }

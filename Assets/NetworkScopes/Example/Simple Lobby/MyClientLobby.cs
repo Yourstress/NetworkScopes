@@ -7,7 +7,7 @@ public class MyClientLobby : ClientScope<MyClientLobby.ISender>, MyClientLobby.I
 	[Generated]
 	public interface ISender : IScopeSender
 	{
-		void GetOnlinePlayerCount();
+		ValuePromise<int> GetOnlinePlayerCount();
 		void LookForMatch();
 	}
 
@@ -20,10 +20,12 @@ public class MyClientLobby : ClientScope<MyClientLobby.ISender>, MyClientLobby.I
 		return this;
 	}
 
-	void ISender.GetOnlinePlayerCount()
+	ValuePromise<int> ISender.GetOnlinePlayerCount()
 	{
-		ISignalWriter writer = CreateSignal(-632556091 /*hash 'GetOnlinePlayerCount'*/);
+		ValuePromise<int> promise = new ValuePromise<int>();
+		ISignalWriter writer = CreatePromiseSignal(-632556091, promise /*hash 'GetOnlinePlayerCount'*/);
 		SendSignal(writer);
+		return promise;
 	}
 
 	void ISender.LookForMatch()
@@ -36,12 +38,17 @@ public class MyClientLobby : ClientScope<MyClientLobby.ISender>, MyClientLobby.I
 	{
 	}
 
-	protected void Receive_FoundMatch(ISignalReader reader)
+	protected void ReceiveSignal_FoundMatch(ISignalReader reader)
 	{
 		LobbyMatch match = new LobbyMatch();;
 		match.Deserialize(reader);
 		OnFoundMatch(match);
 		FoundMatch(match);
+	}
+
+	protected void ReceivePromise_GetOnlinePlayerCount(ISignalReader reader)
+	{
+		ReceivePromise(reader);
 	}
 
 }

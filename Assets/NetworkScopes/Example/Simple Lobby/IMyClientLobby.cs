@@ -1,11 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using NetworkScopes;
-
-[NetworkSerialize]
-public partial class LobbyMatch
-{
-    // any data about the match
-}
+﻿using NetworkScopes;
 
 [Scope(typeof(IMyServerLobby))]
 public interface IMyClientLobby : IClientScope

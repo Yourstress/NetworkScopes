@@ -46,13 +46,25 @@ namespace NetworkScopes
 				foreach (MethodInfo method in methods)
 				{
 					// skip public non-receive functions
-					if (method.IsPublic || !method.Name.StartsWith("Receive_"))
-					{
+					if (method.IsPublic)
 						continue;
+
+					string name;
+					int hash;
+					if (method.Name.StartsWith("ReceiveSignal_"))
+					{
+						name = method.Name.Remove(0, 14);
+						hash = name.GetHashCode();
 					}
-					
-					string name = method.Name.Remove(0, 8);
-					Add(name.GetHashCode(), method);
+					else if (method.Name.StartsWith("ReceivePromise_"))
+					{
+						name = method.Name.Remove(0, 15);
+						hash = ("#" + name).GetHashCode();
+					}
+					else
+						continue;
+
+					Add(hash, method);
 				}
 			}
 		}

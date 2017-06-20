@@ -39,7 +39,7 @@ namespace MyExamples
 		{
 		}
 
-		protected void Receive_OnPlayerJoined(ISignalReader reader)
+		protected void ReceiveSignal_OnPlayerJoined(ISignalReader reader)
 		{
 			string playerName = reader.ReadString();
 			int playerID = reader.ReadInt32();
@@ -47,7 +47,7 @@ namespace MyExamples
 			OnPlayerJoined(playerName, playerID);
 		}
 
-		protected void Receive_OnPlayerDataReceived(ISignalReader reader)
+		protected void ReceiveSignal_OnPlayerDataReceived(ISignalReader reader)
 		{
 			PlayerData playerData = new PlayerData();;
 			playerData.Deserialize(reader);

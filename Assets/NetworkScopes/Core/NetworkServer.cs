@@ -20,11 +20,19 @@ namespace NetworkScopes
 		public event Action<INetworkPeer> OnPeerConnected = delegate { };
 		public event Action<INetworkPeer> OnPeerDisconnected = delegate { };
 
-		protected readonly List<IServerScope> registeredScopes = new List<IServerScope>();
+		protected readonly Dictionary<ScopeChannel,IServerScope> registeredScopes = new Dictionary<ScopeChannel, IServerScope>();
 
 		public int PeerCount { get; private set; }
 
 		public IServerScope defaultScope;
+
+		private ShortGenerator channelGenerator = new ShortGenerator(short.MinValue, short.MaxValue);
+
+		public NetworkServer()
+		{
+			// the channel generator should never generate the system channel
+			channelGenerator.AllocateManualValue(ScopeChannel.SystemChannel);
+		}
 
 		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()
 		{
@@ -33,17 +41,19 @@ namespace NetworkScopes
 			if (defaultScope == null)
 				defaultScope = newScope;
 
-			// TODO: create channel for each registered scope -- channel hard coded to 0!!
-			newScope.InitializeServerScope(this, scopeIdentifier, 0);
+			ScopeChannel channel = channelGenerator.AllocateValue();
 
-			registeredScopes.Add(newScope);
+			// TODO: create channel for each registered scope -- channel hard coded to 0!!
+			newScope.InitializeServerScope(this, scopeIdentifier, channel);
+
+			registeredScopes[channel] = newScope;
 
 			return newScope;
 		}
 
 		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
 		{
-			if (!registeredScopes.Remove(scope))
+			if (!registeredScopes.Remove(scope.currentChannel))
 				throw new Exception(string.Format("The scope {0} is not registered.", scope));
 		}
 
@@ -67,6 +77,22 @@ namespace NetworkScopes
 			PeerCount--;
 
 			OnPeerDisconnected(peer);
+		}
+
+		protected void ProcessSignal(ISignalReader signal, INetworkPeer sender)
+		{
+			ScopeChannel targetChannel = signal.ReadScopeChannel();
+			IServerScope targetScope;
+
+			// in order to receive a signal, the receiving scope must be active (got an Entered Scope system message).
+			if (registeredScopes.TryGetValue(targetChannel, out targetScope))
+			{
+				targetScope.ProcessSignal(signal, sender);
+			}
+			else
+			{
+				Debug.LogWarningFormat("Server could not process signal on unknown channel {0}.", targetChannel);
+			}
 		}
 
 		// Static server factory methods

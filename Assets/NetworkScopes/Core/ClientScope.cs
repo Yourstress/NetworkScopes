@@ -15,33 +15,48 @@ namespace NetworkScopes
 			get { return GetScopeSender(); }
 		}
 
-		private IClientSignalProvider _serviceProvider;
+		private IClientSignalProvider _signalProvider;
 
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel currentChannel { get; private set; }
+
+		private NetworkPromiseHandler promiseHandler = new NetworkPromiseHandler();
 
 		void IClientScope.Initialize(IClientSignalProvider serviceProvider, ScopeIdentifier scopeIdentifier)
 		{
 			this.scopeIdentifier = scopeIdentifier;
 
-			_serviceProvider = serviceProvider;
+			_signalProvider = serviceProvider;
 
 			SignalMethodBinder.BindScope(GetType());
 		}
 
-		// TODO: pass down signal options (which scope and which signal method)
 		protected ISignalWriter CreateSignal(int signalID)
 		{
 			// return writer based on the current network medium (service provider)
-			ISignalWriter signal = _serviceProvider.CreateSignal(currentChannel);
+			ISignalWriter signal = _signalProvider.CreateSignal(currentChannel);
 			signal.WriteInt32(signalID);
+			return signal;
+		}
+
+		protected ISignalWriter CreatePromiseSignal(int signalID, INetworkPromise promise)
+		{
+			ISignalWriter signal = CreateSignal(signalID);
+			signal.WriteInt32(promiseHandler.EnqueuePromise(promise));
 			return signal;
 		}
 
 		protected void SendSignal(ISignalWriter signal)
 		{
 			// send out the signal using the service provider
-			_serviceProvider.SendSignal(signal);
+			_signalProvider.SendSignal(signal);
+		}
+
+		protected void ReceivePromise(ISignalReader reader)
+		{
+			int promiseID = reader.ReadInt32();
+
+			promiseHandler.DequeueAndReceivePromise(promiseID, reader);
 		}
 
 		protected virtual void OnEnterScope()
@@ -78,11 +93,6 @@ namespace NetworkScopes
 		void IClientScope.ProcessSignal(ISignalReader signal)
 		{
 			SignalMethodBinder.Invoke(this, GetType(), signal);
-			// TODO: read the signal id and find the method associated
-
-			// TODO: read parameters from the reader based on the expected methods
-
-			// TODO: call method with parameters
 		}
 	}
 }

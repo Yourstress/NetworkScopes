@@ -36,7 +36,7 @@ namespace NetworkScopes.CodeGeneration
 		/// <summary>
 		/// [AssignmentType] [AssignmentName] = [ObjectName].[MethodName]([Parameters...]);
 		/// </summary>
-		public void AddMethodCallWithAssignment(string assignmentType, string assignmentName, string objectName, String methodName/*, params string[] parameters*/)
+		public void AddMethodCallWithAssignment(string assignmentName, string assignmentType, string objectName, String methodName/*, params string[] parameters*/)
 		{
 			AddRawInstruction(string.Format("{0} {1} = {2}.{3}();", assignmentType, assignmentName, objectName, methodName));
 		}
@@ -63,6 +63,15 @@ namespace NetworkScopes.CodeGeneration
 		public void AddLocalMethodCall(string methodName, params string[] parameters)
 		{
 			AddRawInstruction(string.Format("{0}({1});", methodName, string.Join(", ", parameters)));
+		}
+
+		/// <summary>
+		/// [AssignmentType] [AssignmentName] = [MethodName]([Parameters...]);
+		/// </summary>
+		public void AddLocalMethodCallWithAssignment(string methodName, string assignmentType, string assignmentName,
+			params string[] parameters)
+		{
+			AddRawInstruction(string.Format("{0} {1} = {2}({3});", assignmentType, assignmentName, methodName, string.Join(", ", parameters)));
 		}
 
 		private void AddRawInstruction(string instruction)
