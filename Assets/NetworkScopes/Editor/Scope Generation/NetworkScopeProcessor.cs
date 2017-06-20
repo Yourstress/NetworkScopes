@@ -21,21 +21,7 @@ namespace NetworkScopes.CodeGeneration
 		{
 			SerializationProvider serializer = new SerializationProvider();
 
-			// log/generate marked scopes
-			foreach (ScopeDefinition scopeGen in NetworkScopeUtility.FindScopeGenerationConfigs(serializer))
-			{
-				ScriptWriter writer = scopeGen.scopeDefinition.ToScriptWriter();
-				writer.WriteAt(0, scopeGen.scopeDefinition.type.Name+Environment.NewLine);
-
-				if (logOnly)
-					Debug.Log(writer);
-				else
-				{
-					string scriptWritePath = scopeGen.GetScopeScriptPath();
-
-					File.WriteAllText(scriptWritePath, writer.ToString());
-				}
-			}
+			List<ScopeDefinition> scopeConfigs = NetworkScopeUtility.FindScopeGenerationConfigs(serializer);
 
 			// log types that failed to serialize within the previous block
 			foreach (KeyValuePair<Type, SerializationFailureReason> kvp in serializer.failedTypes)
@@ -44,15 +30,33 @@ namespace NetworkScopes.CodeGeneration
 				{
 					case SerializationFailureReason.TypeNotSerializable:
 						Debug.LogWarningFormat(
-							"The type <b>{0}</b> can not be serialized because it does not implement <b>ISerializable</b>. Use the <b>[NetworkSerialize]</b> to generate serialization code or implement <b>ISerializable</b>", kvp.Key.Name);
+							"The type <b>{0}</b> can not be serialized because it does not implement <b>ISerializable</b>. Use the <b>[NetworkSerialize]</b> to generate serialization code or implement <b>ISerializable</b> to manually serialize it.", kvp.Key.Name);
 						break;
-//					case SerializationFailureReason.TypeSerializationPendingGeneration:
-//						Debug.LogWarningFormat(
-//							"The type <b>{0}</b> is marked for serialization but is pending code generation. Use the <b>Tools/Network Scopes/Generate Scopes</b> menu item to generate the serialization methods.",
-//							kvp.Key.Name);
-//						break;
 					default:
 						throw new ArgumentOutOfRangeException();
+				}
+			}
+
+			if (!logOnly && serializer.failedTypes.Count > 0)
+				throw new Exception("Failed to generate scopes. Use the <b>[NetworkSerializable]</b> attribute to generate serialization code, or Implement <b>ISerializable]</b> to manually serialize your types.");
+
+			// log/generate marked scopes
+			foreach (ScopeDefinition scopeGen in scopeConfigs)
+			{
+				ScriptWriter writer = scopeGen.scopeDefinition.ToScriptWriter();
+
+				if (logOnly)
+				{
+					// write scope name first when logging
+					writer.WriteAt(0, scopeGen.scopeDefinition.type.Name+Environment.NewLine);
+					
+					Debug.Log(writer);
+				}
+				else
+				{
+					string scriptWritePath = scopeGen.GetScopeScriptPath();
+
+					File.WriteAllText(scriptWritePath, writer.ToString());
 				}
 			}
 
