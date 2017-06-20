@@ -105,6 +105,7 @@ namespace NetworkScopes.CodeGeneration
 					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
 						string.Format("CreateSignal({0} /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
 				}
+				// create promise command
 				else
 				{
 					// allocate new promise before creating the signal
