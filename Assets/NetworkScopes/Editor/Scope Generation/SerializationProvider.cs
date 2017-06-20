@@ -13,8 +13,8 @@ namespace NetworkScopes.CodeGeneration
 
 	public enum DeserializationOptions
 	{
-		Default,
-		DontAllocateVariables,
+		AllocateVariable,
+		DontAllocateVariable,
 	}
 
 	public class SerializationProvider
@@ -30,6 +30,24 @@ namespace NetworkScopes.CodeGeneration
 
 		public void AddSerializationCommands(MethodBody targetMethod, string variableName, Type variableType)
 		{
+			// if this is an array, generate a for-loop to serialize every item in it
+			if (variableType.IsArray)
+			{
+				string lengthVarName = variableName + ".Length";
+
+				// serialize array length
+				AddSerializationCommands(targetMethod, lengthVarName, typeof(int));
+
+				// nested-serialize everything in the array
+				string loopVarName = variableName + "_x";
+				targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
+				AddSerializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), variableType.GetElementType());
+				targetMethod.EndForIntLoop();
+
+
+				return;
+			}
+
 			// find primitive type serializer method within ISignalWriter
 			MethodInfo paramWriteMethod = SignalUtility.GetWriterMethod(variableType);
 
@@ -61,18 +79,41 @@ namespace NetworkScopes.CodeGeneration
 			failedTypes[variableType] = SerializationFailureReason.TypeNotSerializable;
 		}
 
-		public void AddDeserializationCommands(MethodBody targetMethod, string variableName, Type variableType, DeserializationOptions deserializationOptions = DeserializationOptions.Default)
+		public void AddDeserializationCommands(MethodBody targetMethod, string variableName, Type variableType, DeserializationOptions deserializationOptions = DeserializationOptions.AllocateVariable)
 		{
+			// if this is an array, generate a for-loop to deserialize it and every item in it
+			if (variableType.IsArray)
+			{
+				// nested-deserialize array
+				string lengthVarName = variableName + "_length";
+
+				// CODE: int varLength = reader.ReadInt32();
+				AddDeserializationCommands(targetMethod, lengthVarName, typeof(int));
+
+				// CODE: T[] var = new T[length];
+				targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}[{1}]", variableType.GetElementType().Name, lengthVarName));
+
+				// CODE: for loop and nested serialization
+				string loopVarName = variableName + "_x";
+				targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
+				AddDeserializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), variableType.GetElementType(), DeserializationOptions.DontAllocateVariable);
+				targetMethod.EndForIntLoop();
+
+				return;
+			}
+
 			// find primitive type deserializer method within ISignalReader
 			MethodInfo paramReadMethod = SignalUtility.GetReaderMethod(variableType);
 
 			// if it's found, immediately write the command to deserialize it from the signal reader
 			if (paramReadMethod != null)
 			{
-				if (deserializationOptions == DeserializationOptions.DontAllocateVariables)
+				if (deserializationOptions == DeserializationOptions.AllocateVariable)
+					targetMethod.AddMethodCallWithAssignment(variableName, variableType.GetReadableName(), "reader", paramReadMethod.Name);
+				else if (deserializationOptions == DeserializationOptions.DontAllocateVariable)
 					targetMethod.AddMethodCallWithAssignment(variableName, "reader", paramReadMethod.Name);
 				else
-					targetMethod.AddMethodCallWithAssignment(variableName, variableType.GetReadableName(), "reader", paramReadMethod.Name);
+					throw new Exception("Undefined DeserializaOption");
 				return;
 			}
 
@@ -90,7 +131,12 @@ namespace NetworkScopes.CodeGeneration
 			if (implementsSerializable || serializeAttribute != null)
 			{
 				// create the object to serialize the data into
-				targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}();", variableType.Name));
+				if (deserializationOptions == DeserializationOptions.AllocateVariable)
+					targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}()", variableType.Name));
+				else if (deserializationOptions == DeserializationOptions.DontAllocateVariable)
+					targetMethod.AddAssignmentInstruction(variableName, string.Format("new {0}()", variableType));
+				else
+					throw new Exception("Undefined DeserializationOption.");
 
 				// call the deserialize method and read the value into the newly created variable
 				targetMethod.AddMethodCall(variableName, "Deserialize", "reader");
@@ -158,7 +204,7 @@ namespace NetworkScopes.CodeGeneration
 			foreach (MemberInfo member in membersToSerialize)
 			{
 				Type type = ((member is FieldInfo) ? ((FieldInfo) member).FieldType : ((PropertyInfo)member).PropertyType);
-				AddDeserializationCommands(readerMethod.Body, member.Name, type, DeserializationOptions.DontAllocateVariables);
+				AddDeserializationCommands(readerMethod.Body, member.Name, type, DeserializationOptions.DontAllocateVariable);
 			}
 
 			typeSerializer.methods.Add(writerMethod);
@@ -178,7 +224,7 @@ namespace NetworkScopes.CodeGeneration
 		}
 
 		public static TypeDefinition GetPromiseType(Type type)
-		{ 
+		{
 			Type mainPromiseType = (type.Namespace == "System") ? typeof(ValuePromise<>) : typeof(ObjectPromise<>);
 
 			return TypeDefinition.MakeGenericType(mainPromiseType, type.GetReadableName());
