@@ -49,7 +49,7 @@ namespace MyExamples
 
 		protected void ReceiveSignal_OnPlayerDataReceived(ISignalReader reader)
 		{
-			PlayerData playerData = new PlayerData();;
+			PlayerData playerData = new PlayerData();
 			playerData.Deserialize(reader);
 			OnOnPlayerDataReceived(playerData);
 			OnPlayerDataReceived(playerData);

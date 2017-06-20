@@ -1,8 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
+﻿
 using NetworkScopes;
-using UnityEditor;
 using UnityEngine;
 
 public class SimpleLobby : ExampleSimpleNetwork
