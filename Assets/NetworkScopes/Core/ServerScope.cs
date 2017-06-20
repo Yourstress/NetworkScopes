@@ -23,7 +23,8 @@ namespace NetworkScopes
 
 		public INetworkPeer SenderPeer { get; private set; }
 
-		private NetworkPromiseHandler promiseHandler = new NetworkPromiseHandler();
+		// stores NetworkPromise objects awaiting peer responses
+		private Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
 
 		protected ServerScope()
 		{
@@ -66,8 +67,22 @@ namespace NetworkScopes
 			// unregister disconnect event upon removal of peer
 			peer.OnDisconnect -= RemovePeer;
 
+			// remove peer promises handler (if one exists)
+			peerPromiseHandlers.Remove(peer);
+
 			// notify inheritor class of this peer's exit
 			OnPeerExited(peer);
+		}
+
+		NetworkPromiseHandler GetPromiseHandler(INetworkPeer peer)
+		{
+			NetworkPromiseHandler ph;
+
+			// if this peer doesn't have a promise handler, create one and add it to the dictionary (to be cleaned when peer is removed)
+			if (!peerPromiseHandlers.TryGetValue(peer, out ph))
+				peerPromiseHandlers[peer] = ph = new NetworkPromiseHandler();
+
+			return ph;
 		}
 
 		protected virtual void OnPeerEntered(INetworkPeer peer)
@@ -109,7 +124,7 @@ namespace NetworkScopes
 		protected ISignalWriter CreatePromiseSignal(int signalID, INetworkPromise promise)
 		{
 			ISignalWriter signal = CreateSignal(signalID);
-			signal.WriteInt32(promiseHandler.EnqueuePromise(promise));
+			signal.WriteInt32(GetPromiseHandler(SenderPeer).EnqueuePromise(promise));
 			return signal;
 		}
 
@@ -129,11 +144,12 @@ namespace NetworkScopes
 		{
 			int promiseID = reader.ReadInt32();
 
-			promiseHandler.DequeueAndReceivePromise(promiseID, reader);
+			GetPromiseHandler(SenderPeer).DequeueAndReceivePromise(promiseID, reader);
 		}
 
 		void IServerScope.ProcessSignal(ISignalReader signal, INetworkPeer peer)
 		{
+			// assign the sender before dispatching the call to the scope's parent class
 			SenderPeer = peer;
 
 			SignalMethodBinder.Invoke(this, GetType(), signal);

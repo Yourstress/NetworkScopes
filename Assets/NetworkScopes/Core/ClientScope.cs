@@ -87,6 +87,8 @@ namespace NetworkScopes
 
 			isActive = false;
 
+			promiseHandler.ClearPromises();
+
 			OnExitScope();
 		}
 

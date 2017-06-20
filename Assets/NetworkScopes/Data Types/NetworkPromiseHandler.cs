@@ -33,4 +33,9 @@ public class NetworkPromiseHandler
 
         return unusedKey;
     }
+
+    public void ClearPromises()
+    {
+        pendingPromises.Clear();
+    }
 }
