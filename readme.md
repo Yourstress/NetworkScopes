@@ -6,7 +6,7 @@ A lightweight, high-performance network library featuring strong-typed communica
 
 Features
 --------
-- Strong-typed communication via direct method calls (named **Signals**).
+- Strong-typed network communication via direct method calls (named **Signals**).
 
 - Automatically-managed channels for segmenting peers between lobbies or matches (**Scopes**).
 
@@ -22,14 +22,14 @@ Features
 Getting Started
 ---------------
 - **Scopes** allow communication between two C# objects (server and client), defined by C# interfaces and automatically generated.
-- **Signals** are C# methods defined within a **Scope** that the server or client can receive with any number of parameters.
+- **Signals** are C# methods (also generated) defined within a **Scope** that the server or client can receive with any number of parameters.
 
 To define your client and Server scopes, simply write two interfaces that inherit **IServerScope** and **IClientScope** and define the methods (Signals) each entity can receive:
 ```
 [Scope(typeof(IMyClientLobby))]
 public interface IMyServerLobby : IServerScope
 {
-    // this is a "Promise" Signal. The client will be able to register a callback when the server returns the player count.
+    // this is a "Promise" Signal. The client will be able to register for a callback when remote-calling this Signal.
     int GetOnlinePlayerCount();
     
     // this is a Signal. When the client calls the method, it will trigger the server's LookForMatch() scope implementation.
