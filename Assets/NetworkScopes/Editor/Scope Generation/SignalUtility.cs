@@ -12,7 +12,12 @@ namespace NetworkScopes.CodeGeneration
 
 		public static string GetReadableName(this Type type)
 		{
-			switch (type.Name)
+			return GetReadableTypeName(type.Name);
+		}
+
+		public static string GetReadableTypeName(string typeName)
+		{
+			switch (typeName)
 			{
 				case "Object": return "object";
 				case "String": return "string";
@@ -31,7 +36,7 @@ namespace NetworkScopes.CodeGeneration
 				case "UInt64": return "ulong";
 				case "Void": return "void";
 				default:
-					return type.Name;
+					return typeName;
 			}
 		}
 
