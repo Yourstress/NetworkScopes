@@ -31,20 +31,37 @@ namespace NetworkScopes.CodeGeneration
 		public void AddSerializationCommands(MethodBody targetMethod, string variableName, Type variableType)
 		{
 			// if this is an array, generate a for-loop to serialize every item in it
-			if (variableType.IsArray)
+			if (variableType.IsArray || (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(List<>)))
 			{
-				string lengthVarName = variableName + ".Length";
+				Type elementType = variableType.IsArray ? variableType.GetElementType() : variableType.GetGenericArguments()[0];
 
-				// serialize array length
-				AddSerializationCommands(targetMethod, lengthVarName, typeof(int));
+				// if it's a serializable type, there's a one liner method to serialize it
+				if (typeof(ISerializable).IsAssignableFrom(elementType) || serializableTypes.Contains(elementType))
+				{
+					if (variableType.IsArray)
+						targetMethod.AddMethodCall("writer", string.Format("WriteObjectArray<{0}>", elementType.Name), variableName);
+					else
+					{
+						// import the needed namespace for generic List type
+						targetMethod.Import(typeof(List<>).Namespace);
 
-				// nested-serialize everything in the array
-				string loopVarName = variableName + "_x";
-				targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
-				AddSerializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), variableType.GetElementType());
-				targetMethod.EndForIntLoop();
+						targetMethod.AddMethodCall("writer", string.Format("WriteObjectList<{0}>", elementType.Name), variableName);
+					}
+				}
+				// otherwise, serialize it inline
+				else
+				{
+					string lengthVarName = variableName + ".Length";
 
+					// serialize array length
+					AddSerializationCommands(targetMethod, lengthVarName, typeof(int));
 
+					// nested-serialize everything in the array
+					string loopVarName = variableName + "_x";
+					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
+					AddSerializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), elementType);
+					targetMethod.EndForIntLoop();
+				}
 				return;
 			}
 
@@ -66,10 +83,10 @@ namespace NetworkScopes.CodeGeneration
 				serializableTypes.Add(variableType);
 
 			// could not find a native writer? look for an implementor of ISerializable
-			bool implementsSerializable = typeof(ISerializable).IsAssignableFrom(variableType);
+			bool typeImplementsSerializable = typeof(ISerializable).IsAssignableFrom(variableType);
 
 			// write serialization command(s) if it implements ISerializable OR if it's marked for code generation
-			if (implementsSerializable || serializeAttribute != null)
+			if (typeImplementsSerializable || serializeAttribute != null)
 			{
 				targetMethod.AddMethodCall(variableName, "Serialize", "writer");
 				return;
@@ -82,22 +99,57 @@ namespace NetworkScopes.CodeGeneration
 		public void AddDeserializationCommands(MethodBody targetMethod, string variableName, Type variableType, DeserializationOptions deserializationOptions = DeserializationOptions.AllocateVariable)
 		{
 			// if this is an array, generate a for-loop to deserialize it and every item in it
-			if (variableType.IsArray)
+			if (variableType.IsArray || (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(List<>)))
 			{
-				// nested-deserialize array
-				string lengthVarName = variableName + "_length";
+				Type elementType = variableType.IsArray ? variableType.GetElementType() : variableType.GetGenericArguments()[0];
 
-				// CODE: int varLength = reader.ReadInt32();
-				AddDeserializationCommands(targetMethod, lengthVarName, typeof(int));
+				// if it's a serializable type, there's a one liner method to serialize it
+				if (typeof(ISerializable).IsAssignableFrom(elementType) || serializableTypes.Contains(elementType))
+				{
+					// CODE: T[] var = reader.ReadObjectArray<T>();
+					if (variableType.IsArray)
+						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("{0}[]", elementType.Name), "reader",
+							string.Format("ReadObjectArray<{0}>", elementType));
+					// CODE: List<T> var = reader.ReadObjectList<T>();
+					else
+					{
+						// import the needed namespace for generic List type
+						targetMethod.Import(typeof(List<>).Namespace);
 
-				// CODE: T[] var = new T[length];
-				targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}[{1}]", variableType.GetElementType().Name, lengthVarName));
+						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("List<{0}>", elementType.Name), "reader", string.Format("ReadObjectList<{0}>", elementType));
+					}
+				}
+				// otherwise, serialize it inline
+				else
+				{
+					// nested-deserialize array
+					string lengthVarName = variableName + "_length";
 
-				// CODE: for loop and nested serialization
-				string loopVarName = variableName + "_x";
-				targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
-				AddDeserializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), variableType.GetElementType(), DeserializationOptions.DontAllocateVariable);
-				targetMethod.EndForIntLoop();
+					// CODE: int varLength = reader.ReadInt32();
+					AddDeserializationCommands(targetMethod, lengthVarName, typeof(int));
+
+					// CODE: T[] var = new T[length];
+					if (variableType.IsArray)
+					{
+						targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}[{1}]", elementType.Name, lengthVarName));
+					}
+					// CODE: List<T> var = new List<T>[length];
+					else
+					{
+						// import the needed namespace for generic List type
+						targetMethod.Import(typeof(List<>).Namespace);
+
+						TypeDefinition genericVariableType = TypeDefinition.MakeGenericType(variableType, elementType);
+
+						targetMethod.AddAssignmentInstruction(genericVariableType, variableName, string.Format("new List<{0}>({1})", elementType.Name, lengthVarName));
+					}
+
+					// CODE: for loop and nested serialization
+					string loopVarName = variableName + "_x";
+					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
+					AddDeserializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), elementType, DeserializationOptions.DontAllocateVariable);
+					targetMethod.EndForIntLoop();
+				}
 
 				return;
 			}
@@ -125,10 +177,10 @@ namespace NetworkScopes.CodeGeneration
 				serializableTypes.Add(variableType);
 
 			// could not find a native writer? look for an implementor of ISerializable
-			bool implementsSerializable = typeof(ISerializable).IsAssignableFrom(variableType);
+			bool typeImplementsSerializable = typeof(ISerializable).IsAssignableFrom(variableType);
 
  			// write serialization command(s) if it implements ISerializable OR if it's marked for code generation
-			if (implementsSerializable || serializeAttribute != null)
+			if (typeImplementsSerializable || serializeAttribute != null)
 			{
 				// create the object to serialize the data into
 				if (deserializationOptions == DeserializationOptions.AllocateVariable)
