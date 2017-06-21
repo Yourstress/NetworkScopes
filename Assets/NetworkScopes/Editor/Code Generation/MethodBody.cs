@@ -110,7 +110,14 @@ namespace NetworkScopes.CodeGeneration
 			Indent();
 		}
 
-		public void EndForIntLoop()
+		public void BeginForEachLoop(TypeDefinition elementType, string elementName, string enumerableObject)
+		{
+			AddRawInstruction(string.Format("foreach ({0} {1} in {2})", elementType, elementName, enumerableObject));
+			AddRawInstruction("{");
+			Indent();
+		}
+
+		public void EndLoop()
 		{
 			Unindent();
 			AddRawInstruction("}");
