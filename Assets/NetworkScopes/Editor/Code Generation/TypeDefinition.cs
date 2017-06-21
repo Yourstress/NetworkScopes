@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace NetworkScopes.CodeGeneration
@@ -7,6 +8,15 @@ namespace NetworkScopes.CodeGeneration
 	{
 		public string Name;
 		public string Namespace;
+
+		public TypeDefinition(Type type)
+		{
+			Name = type.GetReadableName();
+			Namespace = type.Namespace;
+
+			if (type.IsGenericType)
+				SetGenericType(type.GetGenericArguments().Select(arg => arg.Name).ToArray());
+		}
 
 		public TypeDefinition(string name)
 		{
@@ -25,7 +35,25 @@ namespace NetworkScopes.CodeGeneration
 
 		public static TypeDefinition MakeGenericType(TypeDefinition type, params string[] genericParams)
 		{
-			StringBuilder nameBuilder = new StringBuilder(type.Name.Substring(0, type.Name.LastIndexOf('`')));
+			TypeDefinition td = new TypeDefinition(type.Name, type.Namespace);
+			td.SetGenericType(genericParams);
+			return td;
+		}
+
+		private void CleanGenericName()
+		{
+			char[] genericChars = {'`', '<'};
+			int genericCharIndex = Name.LastIndexOfAny(genericChars);
+
+			if (genericCharIndex != -1)
+				Name = Name.Substring(0, genericCharIndex);
+		}
+
+		private void SetGenericType(params string[] genericParams)
+		{
+			CleanGenericName();
+
+			StringBuilder nameBuilder = new StringBuilder(Name);
 
 			if (genericParams != null)
 			{
@@ -41,15 +69,13 @@ namespace NetworkScopes.CodeGeneration
 				}
 				nameBuilder.Append(">");
 			}
-			return new TypeDefinition(nameBuilder.ToString(), type.Namespace);
+
+			Name = nameBuilder.ToString();
 		}
 
 		public static implicit operator TypeDefinition(Type t)
 		{
-			return new TypeDefinition(t.GetReadableName())
-			{
-				Namespace = t.Namespace
-			};
+			return new TypeDefinition(t);
 		}
 	}
 }

@@ -49,15 +49,10 @@ namespace NetworkScopes.CodeGeneration
 
 		private void Write(ScriptWriter writer)
 		{
-			InheritImports();
-
 			if (isCommentedOut)
 				writer.WriteFullLine("/*");
 
-			foreach (string namespaceImports in imports)
-			{
-				writer.WriteFullLineFormat("using {0};", namespaceImports);
-			}
+			CollectAndWriteImports(writer);
 			writer.NewLine();
 
 			// write namespace
@@ -169,20 +164,35 @@ namespace NetworkScopes.CodeGeneration
 				writer.WriteFullLine("*/");
 		}
 
-		private void InheritImports()
+		private void CollectAndWriteImports(ScriptWriter writer)
 		{
-			foreach (ClassDefinition classDefinition in nestedClasses)
+			// collect all imports from nested classes
+			foreach (ClassDefinition nestedClass in nestedClasses)
 			{
-				classDefinition.PopImports(imports);
+				CollectImports(nestedClass.imports);
+			}
+
+			// ..and methods
+			foreach (MethodDefinition method in methods)
+			{
+				if (method.Body != null && method.Body.imports != null)
+					CollectImports(method.Body.imports);
+			}
+
+			// write them to the script writer
+			foreach (string import in imports)
+			{
+				writer.WriteFullLineFormat("using {0};", import);
 			}
 		}
 
-		private void PopImports(HashSet<string> targetImports)
+		public void CollectImports(HashSet<string> imports)
 		{
 			foreach (string import in imports)
 			{
-				targetImports.Add(import);
+				this.imports.Add(import);
 			}
+
 			imports.Clear();
 		}
 

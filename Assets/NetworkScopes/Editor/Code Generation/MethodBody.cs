@@ -7,6 +7,16 @@ namespace NetworkScopes.CodeGeneration
 	{
 		public List<string> instructions = new List<string>();
 
+		public HashSet<string> imports = null;
+
+		public void Import(string import)
+		{
+			if (imports == null)
+				imports = new HashSet<string>();
+
+			imports.Add(import);
+		}
+
 		/// <summary>
 		/// [Type] [VarName] = [Value];
 		/// </summary>
