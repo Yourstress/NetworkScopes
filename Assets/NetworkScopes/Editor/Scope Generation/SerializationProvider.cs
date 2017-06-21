@@ -39,19 +39,19 @@ namespace NetworkScopes.CodeGeneration
 				if (typeof(ISerializable).IsAssignableFrom(elementType) || serializableTypes.Contains(elementType))
 				{
 					if (variableType.IsArray)
-						targetMethod.AddMethodCall("writer", string.Format("WriteObjectArray<{0}>", elementType.Name), variableName);
+						targetMethod.AddMethodCall("writer", string.Format("WriteObjectArray<{0}>", elementType.GetReadableName()), variableName);
 					else
 					{
 						// import the needed namespace for generic List type
 						targetMethod.Import(typeof(List<>).Namespace);
 
-						targetMethod.AddMethodCall("writer", string.Format("WriteObjectList<{0}>", elementType.Name), variableName);
+						targetMethod.AddMethodCall("writer", string.Format("WriteObjectList<{0}>", elementType.GetReadableName()), variableName);
 					}
 				}
 				// otherwise, serialize it inline
 				else
 				{
-					string lengthVarName = variableName + ".Length";
+					string lengthVarName = variableName + (variableType.IsArray ? ".Length" : ".Count");
 
 					// serialize array length
 					AddSerializationCommands(targetMethod, lengthVarName, typeof(int));
@@ -108,15 +108,15 @@ namespace NetworkScopes.CodeGeneration
 				{
 					// CODE: T[] var = reader.ReadObjectArray<T>();
 					if (variableType.IsArray)
-						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("{0}[]", elementType.Name), "reader",
-							string.Format("ReadObjectArray<{0}>", elementType));
+						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("{0}[]", elementType.GetReadableName()), "reader",
+							string.Format("ReadObjectArray<{0}>", elementType.GetReadableName()));
 					// CODE: List<T> var = reader.ReadObjectList<T>();
 					else
 					{
 						// import the needed namespace for generic List type
 						targetMethod.Import(typeof(List<>).Namespace);
 
-						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("List<{0}>", elementType.Name), "reader", string.Format("ReadObjectList<{0}>", elementType));
+						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("List<{0}>", elementType.GetReadableName()), "reader", string.Format("ReadObjectList<{0}>", elementType.GetReadableName()));
 					}
 				}
 				// otherwise, serialize it inline
@@ -131,7 +131,7 @@ namespace NetworkScopes.CodeGeneration
 					// CODE: T[] var = new T[length];
 					if (variableType.IsArray)
 					{
-						targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}[{1}]", elementType.Name, lengthVarName));
+						targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}[{1}]", elementType.GetReadableName(), lengthVarName));
 					}
 					// CODE: List<T> var = new List<T>[length];
 					else
@@ -141,7 +141,7 @@ namespace NetworkScopes.CodeGeneration
 
 						TypeDefinition genericVariableType = TypeDefinition.MakeGenericType(variableType, elementType);
 
-						targetMethod.AddAssignmentInstruction(genericVariableType, variableName, string.Format("new List<{0}>({1})", elementType.Name, lengthVarName));
+						targetMethod.AddAssignmentInstruction(genericVariableType, variableName, string.Format("new List<{0}>({1})", elementType.GetReadableName(), lengthVarName));
 					}
 
 					// CODE: for loop and nested serialization
