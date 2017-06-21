@@ -15,7 +15,11 @@ namespace NetworkScopes.CodeGeneration
 			Namespace = type.Namespace;
 
 			if (type.IsGenericType)
-				SetGenericType(type.GetGenericArguments().Select(arg => arg.Name).ToArray());
+				SetGenericType(type.GetGenericArguments().Select(arg => arg.GetReadableName()).ToArray());
+			else if (type.IsArray)
+			{
+				Name = SignalUtility.GetReadableTypeName(Name.Replace("[]", string.Empty)) + "[]";
+			}
 		}
 
 		public TypeDefinition(string name)
@@ -76,6 +80,11 @@ namespace NetworkScopes.CodeGeneration
 		public static implicit operator TypeDefinition(Type t)
 		{
 			return new TypeDefinition(t);
+		}
+
+		public override string ToString()
+		{
+			return Name;
 		}
 	}
 }
