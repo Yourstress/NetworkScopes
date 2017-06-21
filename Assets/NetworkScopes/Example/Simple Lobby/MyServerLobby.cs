@@ -8,7 +8,6 @@ public class MyServerLobby : ServerScope<MyServerLobby.ISender>, MyServerLobby.I
 	public interface ISender : IScopeSender
 	{
 		void FoundMatch(LobbyMatch match);
-		void FoundMatches(LobbyMatch[] matches);
 	}
 
 	public delegate void LookForMatchDelegate();
@@ -24,17 +23,6 @@ public class MyServerLobby : ServerScope<MyServerLobby.ISender>, MyServerLobby.I
 	{
 		ISignalWriter writer = CreateSignal(-106459261 /*hash 'FoundMatch'*/);
 		match.Serialize(writer);
-		SendSignal(writer);
-	}
-
-	void ISender.FoundMatches(LobbyMatch[] matches)
-	{
-		ISignalWriter writer = CreateSignal(771868529 /*hash 'FoundMatches'*/);
-		writer.WriteInt32(matches.Length);
-		for (int matches_x = 0; matches_x < matches.Length; matches_x++)
-		{
-			matches[matches_x].Serialize(writer);
-		}
 		SendSignal(writer);
 	}
 
