@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NetworkScopes
 {
     public static class SignalExtensions
     {
+        #region Data Types
+
         public static ScopeChannel ReadScopeChannel(this ISignalReader reader)
         {
             return reader.ReadShort();
@@ -24,6 +27,10 @@ namespace NetworkScopes
             writer.WriteByte(channel);
         }
 
+        #endregion
+
+        #region Promises
+
         public static int ReadPromiseID(this ISignalReader reader)
         {
             return reader.ReadInt32();
@@ -33,6 +40,10 @@ namespace NetworkScopes
         {
             writer.WriteInt32(reader.ReadInt32());
         }
+
+        #endregion
+
+        #region Generic Objects
 
         private const string _stringType = "String";
         private const string _shortType = "Int16";
@@ -90,5 +101,86 @@ namespace NetworkScopes
             obj.Deserialize(reader);
             return obj;
         }
+
+        #endregion
+
+        #region Arrays
+
+        public static T[] ReadObjectArray<T>(this ISignalReader reader) where T : ISerializable, new()
+        {
+            int length = reader.ReadInt32();
+            T[] array = new T[length];
+
+            for (int x = 0; x < length; x++)
+            {
+                T obj = array[x] = new T();
+                obj.Deserialize(reader);
+            }
+            return array;
+        }
+
+        public static void WriteObjectArray<T>(this ISignalWriter writer, T[] array) where T : ISerializable
+        {
+            writer.WriteInt32(array.Length);
+
+            for (int x = 0; x < array.Length; x++)
+            {
+                array[x].Serialize(writer);
+            }
+        }
+
+        public static List<T> ReadObjectList<T>(this ISignalReader reader) where T : ISerializable, new()
+        {
+            int length = reader.ReadInt32();
+            List<T> list = new List<T>(length);
+
+            for (int x = 0; x < length; x++)
+            {
+                T obj = new T();
+                obj.Deserialize(reader);
+
+                list.Add(obj);
+            }
+            return list;
+        }
+
+        public static void WriteObjectList<T>(this ISignalWriter writer, List<T> list) where T : ISerializable
+        {
+            writer.WriteInt32(list.Count);
+
+            for (int x = 0; x < list.Count; x++)
+                list[x].Serialize(writer);
+        }
+
+        public static Dictionary<TKey,TValue> ReadObjectDictionary<TKey,TValue>(this ISignalReader reader) where TKey : ISerializable, new() where TValue : ISerializable, new()
+        {
+            int length = reader.ReadInt32();
+            Dictionary<TKey,TValue> dictionary = new Dictionary<TKey, TValue>(length);
+
+            for (int x = 0; x < length; x++)
+            {
+                TKey key = new TKey();
+                key.Deserialize(reader);
+
+                TValue value = new TValue();
+                value.Deserialize(reader);
+
+                dictionary[key] = value;
+            }
+            return dictionary;
+        }
+
+        public static void WriteObjectDictionary<TKey,TValue>(this ISignalWriter writer, Dictionary<TKey,TValue> dictionary) where TKey : ISerializable where TValue : ISerializable
+        {
+            writer.WriteInt32(dictionary.Count);
+
+            foreach (KeyValuePair<TKey,TValue> kvp in dictionary)
+            {
+                kvp.Key.Serialize(writer);
+                kvp.Value.Serialize(writer);
+            }
+        }
+
+        #endregion
     }
 }
