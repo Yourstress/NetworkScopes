@@ -60,7 +60,38 @@ namespace NetworkScopes.CodeGeneration
 					string loopVarName = variableName + "_x";
 					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
 					AddSerializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), elementType);
-					targetMethod.EndForIntLoop();
+					targetMethod.EndLoop();
+				}
+				return;
+			}
+			if (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			{
+				Type keyElementType = variableType.GetGenericArguments()[0];
+				Type valElementType = variableType.GetGenericArguments()[1];
+
+				targetMethod.Import(typeof(Dictionary<,>).Namespace);
+
+				// if both key and value are serializable types, there's a one liner method to serialize it
+				if (typeof(ISerializable).IsAssignableFrom(keyElementType) || serializableTypes.Contains(keyElementType) &&
+				    typeof(ISerializable).IsAssignableFrom(valElementType) || serializableTypes.Contains(valElementType))
+				{
+					targetMethod.AddMethodCall("writer", string.Format("WriteObjectDictionary<{0},{1}>", keyElementType.GetReadableName(), valElementType.GetReadableName()), variableName);
+				}
+				// otherwise, serialize it inline
+				else
+				{
+					string lengthVarName = variableName + ".Count";
+
+					// serialize dictionary length
+					AddSerializationCommands(targetMethod, lengthVarName, typeof(int));
+
+					// nested-serialize everything in the array
+					TypeDefinition kvpType = TypeDefinition.MakeGenericType(typeof(KeyValuePair<,>), keyElementType, valElementType);
+					targetMethod.BeginForEachLoop(kvpType, "kvp", variableName);
+					AddSerializationCommands(targetMethod, "kvp.Key", keyElementType);
+					AddSerializationCommands(targetMethod, "kvp.Value", valElementType);
+					targetMethod.EndLoop();
+
 				}
 				return;
 			}
@@ -148,9 +179,46 @@ namespace NetworkScopes.CodeGeneration
 					string loopVarName = variableName + "_x";
 					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
 					AddDeserializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), elementType, DeserializationOptions.DontAllocateVariable);
-					targetMethod.EndForIntLoop();
+					targetMethod.EndLoop();
 				}
 
+				return;
+			}
+			if (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+			{
+				Type keyElementType = variableType.GetGenericArguments()[0];
+				Type valElementType = variableType.GetGenericArguments()[1];
+
+				targetMethod.Import(typeof(List<>).Namespace);
+
+				// if both key and value are serializable types, there's a one liner method to serialize it
+				if (typeof(ISerializable).IsAssignableFrom(keyElementType) || serializableTypes.Contains(keyElementType) &&
+				    typeof(ISerializable).IsAssignableFrom(valElementType) || serializableTypes.Contains(valElementType))
+				{
+					string types = string.Format("{0},{1}", keyElementType.GetReadableName(), valElementType.GetReadableName());
+					targetMethod.AddMethodCallWithAssignment(variableName, string.Format("Dictionary<{0}>", types), "reader", string.Format("ReadObjectDictionary<{0}>", types));
+				}
+				// otherwise, serialize it inline
+				else
+				{
+					// nested-deserialize array
+					string lengthVarName = variableName + "_length";
+					string loopVarName = variableName + "_x";
+
+					// CODE: int varLength = reader.ReadInt32();
+					AddDeserializationCommands(targetMethod, lengthVarName, typeof(int));
+
+					TypeDefinition genericVariableName = TypeDefinition.MakeGenericType(variableType, keyElementType, valElementType);
+					targetMethod.AddAssignmentInstruction(genericVariableName, variableName, string.Format("new Dictionary<{0},{1}>({2})", keyElementType.GetReadableName(), valElementType.GetReadableName(), lengthVarName));
+
+					// CODE: foreach loop and nested serialization
+					TypeDefinition kvpType = TypeDefinition.MakeGenericType(typeof(KeyValuePair<,>), keyElementType, valElementType);
+					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
+					AddDeserializationCommands(targetMethod, "key", keyElementType, DeserializationOptions.AllocateVariable);
+					AddDeserializationCommands(targetMethod, "val", valElementType, DeserializationOptions.AllocateVariable);
+					targetMethod.AddAssignmentInstruction("dic[key]", "val");
+					targetMethod.EndLoop();
+				}
 				return;
 			}
 
