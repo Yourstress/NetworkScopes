@@ -22,18 +22,19 @@ namespace NetworkScopes
 
 		public ScopeAttribute(EntityType entityType, Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.Event)
 		{
-			otherScopeType = otherScope;
+			this.otherScopeType = otherScope;
+			this.entityType = entityType;
 			this.defaultReceiveType = defaultReceiveType;
 		}
 	}
 
 	public class ServerScopeAttribute : ScopeAttribute
 	{
-		public ServerScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.Event) : base(EntityType.Server, otherScope, defaultReceiveType) {}
+		public ServerScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod) : base(EntityType.Server, otherScope, defaultReceiveType) {}
 	}
 
 	public class ClientScopeAttribute : ScopeAttribute
 	{
-		public ClientScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.Event) : base(EntityType.Server, otherScope, defaultReceiveType) {}
+		public ClientScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.Event) : base(EntityType.Client, otherScope, defaultReceiveType) {}
 	}
 }
