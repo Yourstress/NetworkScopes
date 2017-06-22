@@ -10,13 +10,13 @@ namespace NetworkScopes.CodeGeneration
 {
 	public class NetworkScopeProcessor
 	{
-		[InitializeOnLoadMethod]
-		public static void GenerateNetworkScopes()
-		{
-			ClearLog();
-
-			GenerateNetworkScopes(!ScopeGenerationConfig.AutoGenerateScopeClasses);
-		}
+//		[InitializeOnLoadMethod]
+//		public static void GenerateNetworkScopes()
+//		{
+//			ClearLog();
+//
+//			GenerateNetworkScopes(!ScopeGenerationConfig.AutoGenerateScopeClasses);
+//		}
 
 		public static void GenerateNetworkScopes(bool logOnly)
 		{
