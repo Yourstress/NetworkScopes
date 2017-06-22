@@ -101,6 +101,12 @@ namespace NetworkScopes
 			return GetScopeSender();
 		}
 
+		public TScopeSender ReplyToPeer()
+		{
+			peerTarget.TargetPeer = SenderPeer;
+			return GetScopeSender();
+		}
+
 		public TScopeSender SendToPeers(IEnumerable<INetworkPeer> peers)
 		{
 			peerTarget.TargetPeerGroup = peers;
