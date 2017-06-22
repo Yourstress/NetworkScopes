@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿
 using NetworkScopes;
 
-[Scope(typeof(IMyServerLobby))]
-public interface IMyClientLobby : IClientScope
+[ClientScope(typeof(IMyServerLobby))]
+public interface IMyClientLobby
 {
     // this is a Signal thst is manually called at a later time.
     void FoundMatch(LobbyMatch match);

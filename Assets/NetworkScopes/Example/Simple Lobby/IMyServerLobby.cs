@@ -1,6 +1,7 @@
-﻿using NetworkScopes;
+﻿using System.Collections;
+using NetworkScopes;
 
-[Scope(typeof(IMyClientLobby))]
+[ServerScope(typeof(IMyClientLobby))]
 public interface IMyServerLobby : IServerScope
 {
     // this is a Signal that MUST return a number

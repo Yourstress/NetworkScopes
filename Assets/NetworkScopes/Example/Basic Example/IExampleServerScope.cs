@@ -3,9 +3,9 @@ namespace MyExamples
 {
 	using NetworkScopes;
 
-	[Scope(typeof(IExampleClientScope))]
-	public interface IExampleServerScope : IServerScope
+	[ServerScope(typeof(IExampleClientScope))]
+	public interface IExampleServerScope
 	{
-		void JoinGame(string gameName, int gameID);
+		void JoinGame(string playerName);
 	}
 }
