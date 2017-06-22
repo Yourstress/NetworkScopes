@@ -82,6 +82,31 @@ namespace NetworkScopes.CodeGeneration
 			AddRawInstruction(string.Format("{0} {1} = {2}({3});", assignmentType, assignmentName, methodName, string.Join(", ", parameters)));
 		}
 
+		public void BeginForIntLoop(string variableName, string startValue, string maxValueExclusive)
+		{
+			AddRawInstruction(string.Format("for (int {0} = {1}; {0} < {2}; {0}++)", variableName, startValue, maxValueExclusive));
+			AddRawInstruction("{");
+			Indent();
+		}
+
+		public void BeginForEachLoop(TypeDefinition elementType, string elementName, string enumerableObject)
+		{
+			AddRawInstruction(string.Format("foreach ({0} {1} in {2})", elementType, elementName, enumerableObject));
+			AddRawInstruction("{");
+			Indent();
+		}
+
+		public void EndLoop()
+		{
+			Unindent();
+			AddRawInstruction("}");
+		}
+
+		public void AddNotImplementedException()
+		{
+			AddRawInstruction("throw new System.NotImplementedException();");
+		}
+
 		private void AddRawInstruction(string instruction)
 		{
 			if (indentStr.Length > 0)
@@ -103,24 +128,5 @@ namespace NetworkScopes.CodeGeneration
 				indentStr = indentStr.Remove(indentStr.Length - 1, 1);
 		}
 
-		public void BeginForIntLoop(string variableName, string startValue, string maxValueExclusive)
-		{
-			AddRawInstruction(string.Format("for (int {0} = {1}; {0} < {2}; {0}++)", variableName, startValue, maxValueExclusive));
-			AddRawInstruction("{");
-			Indent();
-		}
-
-		public void BeginForEachLoop(TypeDefinition elementType, string elementName, string enumerableObject)
-		{
-			AddRawInstruction(string.Format("foreach ({0} {1} in {2})", elementType, elementName, enumerableObject));
-			AddRawInstruction("{");
-			Indent();
-		}
-
-		public void EndLoop()
-		{
-			Unindent();
-			AddRawInstruction("}");
-		}
 	}
 }

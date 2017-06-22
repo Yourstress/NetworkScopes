@@ -40,6 +40,9 @@ namespace NetworkScopes.CodeGeneration
 			// if the scope will have at least one abstract method, it must be abstract itself
 			scopeDefinition.isAbstract = scopeAttribute.defaultReceiveType == SignalReceiveType.AbstractMethod;
 
+			if (scopeDefinition.isAbstract)
+				scopeDefinition.type.Name += "_Abstract";
+
 			scopeDefinition.ResolveImportType(typeof(GeneratedAttribute));
 
 			// generate sender class from the other scope's interface
@@ -261,18 +264,28 @@ namespace NetworkScopes.CodeGeneration
 			scopeDefinition.methods.Add(receiver);
 		}
 
-		public string GetScopeScriptPath()
+		public static string GetScopeRootPath(string scopeDefInterfaceName)
 		{
-			string[] guids = AssetDatabase.FindAssets(string.Format("t:MonoScript {0}", scopeDefinition.type.Name));
+			string[] guids = AssetDatabase.FindAssets(string.Format("t:MonoScript {0}", scopeDefInterfaceName));
 
 			if (guids.Length == 0)
 				throw new Exception(
-					string.Format("Could not find the file containing the type {0}. Please make sure the filename matches the interface name.", scopeDefinition.type.Name));
+					string.Format("Could not find the file containing the type {0}. Please make sure the filename matches the interface name.", scopeDefInterfaceName));
 
 			string path = AssetDatabase.GUIDToAssetPath(guids[0]);
 
-			path = Path.GetDirectoryName(path);
-			return Path.Combine(path, string.Format("{0}.cs", scopeDefinition.type.Name));
+			return Path.GetDirectoryName(path);
+		}
+
+		public static string MakeScopeScriptPath(string scopeName, string interfaceName)
+		{
+			string path = GetScopeRootPath(interfaceName);
+			return Path.Combine(path, string.Format("{0}.cs", scopeName));
+		}
+
+		public string GetScopeScriptPath()
+		{
+			return MakeScopeScriptPath(scopeDefinition.type.Name, scopeInterface.Name);
 		}
 	}
 }

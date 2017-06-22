@@ -9,7 +9,7 @@ namespace NetworkScopes.CodeGeneration
 {
 	public static class NetworkScopeUtility
 	{
-		public static List<ScopeDefinition> FindScopeGenerationConfigs(SerializationProvider serializer)
+		public static List<ScopeDefinition> FindScopeDefinitions(SerializationProvider serializer)
 		{
 			List<ScopeDefinition> scopes = new List<ScopeDefinition>();
 			Type scopeAttrType = typeof(ScopeAttribute);
