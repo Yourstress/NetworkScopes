@@ -9,7 +9,7 @@ namespace MyExamples
 		[Generated]
 		public interface ISender : IScopeSender
 		{
-			void JoinGame(string gameName, int gameID);
+			void JoinGame(string playerName);
 		}
 
 		public delegate void OnPlayerJoinedDelegate(string playerName, int playerID);
@@ -23,11 +23,10 @@ namespace MyExamples
 			return this;
 		}
 
-		void ISender.JoinGame(string gameName, int gameID)
+		void ISender.JoinGame(string playerName)
 		{
 			ISignalWriter writer = CreateSignal(-1337500580 /*hash 'JoinGame'*/);
-			writer.WriteString(gameName);
-			writer.WriteInt32(gameID);
+			writer.WriteString(playerName);
 			SendSignal(writer);
 		}
 

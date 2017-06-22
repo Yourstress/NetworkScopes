@@ -3,7 +3,7 @@ namespace MyExamples
 {
 	using NetworkScopes;
 
-	[ClientScope(typeof(IExampleServerScope), SignalReceiveType.AbstractMethod)]
+	[ClientScope(typeof(IExampleServerScope))]
 	public interface IExampleClientScope
 	{
 		void OnPlayerJoined(string playerName, int playerID);
