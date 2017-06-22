@@ -14,56 +14,142 @@ Features
 
 - Automatic generation of boilerplate code for Signals, Scopes and object serialization.
 
-- Automatic generation of object serialization code for best performance at the lowest cost.
+- Automatic generation of object serialization code for best performance at the lowest cost, including Arrays, Lists and Dictionaries.
 
 - Built on lidgren (https://github.com/lidgren/lidgren-network-gen3). Can be customized to use ANY network library (UNet, Photon, C# sockets, etc..) while retaining all the above features by implementing an adapter for your desired library.
+
+Scopes
+------
+Scopes allow two classes (Server and Client, usually) to communicate via direct method calls (called Signals).
+
+An example of a Scope through which a Server and Client(s) can communicate is a Lobby. It may also represent an instance of a match.
+
+Each Scope class's internal code for sending and receiving packets, as well as serialization and deserialization of method parameters is **generated**.
+
+Signals
+-------
+Signals are C# methods (also generated) defined within a Scope that the server or client can receive with any number of parameters.
+
 
 
 Getting Started
 ---------------
-- **Scopes** allow communication between two C# objects (server and client), defined by C# interfaces and automatically generated.
-- **Signals** are C# methods (also generated) defined within a **Scope** that the server or client can receive with any number of parameters.
 
-To define your client and Server scopes, simply write two interfaces that inherit **IServerScope** and **IClientScope** and define the methods (Signals) each entity can receive:
+In order to define which signals an entity can receive, two simple interfaces must be written that define the methods (Signals) each entity can receive.
+
+Let's start by defining a Lobby Server Scope that can host matches for clients.
+
 ```
-[Scope(typeof(IMyClientLobby))]
-public interface IMyServerLobby : IServerScope
-{
-    // this is a "Promise" Signal. The client will be able to register for a callback when remote-calling this Signal.
-    int GetOnlinePlayerCount();
-    
-    // this is a Signal. When the client calls the method, it will trigger the server's LookForMatch() scope implementation.
-    void LookForMatch();
+	[ServerScope(typeof(IClientLobby))]
+   	public interface IServerLobby
+   	{
+   		void JoinGame(string gameName, int gameID);
+   	}
+```
+The **ServerScope** attribute allows the generation of *ServerLobby.cs*, along with all the optimized serialization/deserialization code required.
+
+The parameter supplied specifies the Server's Scope (which Signals can be sent to it).
+
+The Client Scope looks very similar, but it can receive different Signals.
+```
+	[ClientScope(typeof(IServerLobby))]
+	public interface IClientLobby
+	{
+		void OnPlayerJoined(string playerName, int playerID);
+		void OnPlayerDataReceived(PlayerData playerData);
+	}
+
+
+```
+
+Our first Scopes are defined and are ready for generation. In Unity, select the menu item *Tools/Network Scopes/Generate Scopes*.
+
+Note: This will generate the server and client Scopes **MyServerLobby** and **MyClientLobby** in the same folder as the definition interfaces.
+
+
+The IServerLobby interface we defined earlier generated this file: (ommitted some boilerplate code)
+```
+	[Generated]
+	public class ServerLobby : ServerScope<ServerLobby.ISender>, ServerLobby.ISender
+	{
+        ...
+
+
+		public delegate void JoinGameDelegate(string playerName);
+		public event JoinGameDelegate OnJoinGame = delegate {};
+
+		void ISender.OnPlayerJoined(string playerName, int playerID)
+		{
+			ISignalWriter writer = CreateSignal(450541865 /*hash 'OnPlayerJoined'*/);
+			writer.WriteString(playerName);
+			writer.WriteInt32(playerID);
+			SendSignal(writer);
+		}
+
+		void ISender.OnPlayerDataReceived(PlayerData playerData)
+		{
+			ISignalWriter writer = CreateSignal(-1141998197 /*hash 'OnPlayerDataReceived'*/);
+			playerData.Serialize(writer);
+			SendSignal(writer);
+		}
+
+		protected virtual void JoinGame(string playerName)
+		{
+		}
+
+		protected void ReceiveSignal_JoinGame(ISignalReader reader)
+		{
+			string playerName = reader.ReadString();
+			OnJoinGame(playerName);
+			JoinGame(playerName);
+		}
+	}
 }
 
-[Scope(typeof(IMyServerLobby))]
-public interface IMyClientLobby : IClientScope
-{
-    void FoundMatch(Match match);
-}
 ```
 
-In Unity, select the menu item *Tools/Network Scopes/Generate Scopes*. This will generate the server and client Scopes MyServerLobby and MyClientLobby implementing IMyServerLobby and IMyClientLobby, respectively:
+The only method defined in IServerLobby has generated *4* things.
+  1. **JoinGame(string playerName) method:** The method called (with same definition parameters) when the Client calls its respective "JoinGame" method. Can be overridden to define join logic.
 
-```
+  2. **OnJoinGame event:** The event called before the above method.
 
-```
+  3. **JoinGameDelegate(string playerName):** The delegate defining the parameters used in the above event.
+
+  4. ReceiveSignal_JoinGame method: This is a non-public method called when the Client calls the respective "JoinGame" method.
+        Its purpose is to deserialize all parameters supplied in the definition
+
+Note: It is possible change what gets generated by specifying a mode in the ServerScope attribute. You might not need the event or virtual method.
+
+It is recommended to use SignalReceiveType.AbstractMethod in the ServerScope/ClientScope attributes as a second parameter. It will generate the class *abstract* with an "_Abstract" postfix. 
+Doing so will open up extra functionality. All received Signal methods will be overridable, as well as OnPeerEntered and OnPeerExited to define what happens when a client enters or exits the Scope (via disconnection or manual removal).
 
 
+The class also contains methods defined in IClientLobby. They are prefixed with "ISender." and are private implementations of that interface. These are methods you can call to send to the Client(s):
+    - SendToPeer(INetworkPeer peer)
+    - ReplyToPeer()
+    - SendToPeers(IEnumerable<INetworkPeer> peers)
+    - SendToAll()
 
+All the above methods return an ISender object, which allows calling the sender methods in the Scope.
+ 
+`
+    ReplyToPeer().OnPlayerJoined(playerName, playerID);
+`
 
 Signal Structure
 -----------------
+
 A Signal is a network method call to a specific Scope (target network object). Each Signal is serialized and deserialized as follows (in order):
 
 (short) scopeChannel: Tells the receiver which registered Scope should read and process this Signal.
+
 (short) signalIdentifier: A unique identifier pointing to a specific method in the receiving Scope.
+
 (optional...) The parameters that the above method expects, depending on their defined types.
 
 
 Upcoming Features
 ------------------
 
-
-- Automatically serialize Arrays, Lists, and Dictionaries of any serializable types.
 - Customizable connection approval validation. Easily define how clients should authenticate with the server, including which parameters are sent and how it's validated.
+- Peer Data per Scope.
