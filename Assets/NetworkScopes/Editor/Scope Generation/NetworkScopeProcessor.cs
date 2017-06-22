@@ -43,6 +43,8 @@ namespace NetworkScopes.CodeGeneration
 			// log/generate marked scopes
 			foreach (ScopeDefinition scopeGen in scopeConfigs)
 			{
+				scopeGen.scopeDefinition.type.Name += "_Abstract";
+
 				ScriptWriter writer = scopeGen.scopeDefinition.ToScriptWriter();
 
 				if (logOnly)
