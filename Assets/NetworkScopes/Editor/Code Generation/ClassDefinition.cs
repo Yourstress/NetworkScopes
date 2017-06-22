@@ -40,6 +40,11 @@ namespace NetworkScopes.CodeGeneration
 			ResolveImportType(typeof(GeneratedAttribute));
 		}
 
+		public ClassDefinition(string name, string namespaceName) : this(name)
+		{
+			type.Namespace = namespaceName;
+		}
+
 		public ScriptWriter ToScriptWriter()
 		{
 			ScriptWriter writer = new ScriptWriter();
@@ -182,7 +187,8 @@ namespace NetworkScopes.CodeGeneration
 			// write them to the script writer
 			foreach (string import in imports)
 			{
-				writer.WriteFullLineFormat("using {0};", import);
+				if (!string.IsNullOrEmpty(import))
+					writer.WriteFullLineFormat("using {0};", import);
 			}
 		}
 
@@ -194,6 +200,11 @@ namespace NetworkScopes.CodeGeneration
 			}
 
 			imports.Clear();
+		}
+
+		public void ResolveImportType(TypeDefinition importType)
+		{
+			imports.Add(importType.Namespace);
 		}
 
 		public void ResolveImportType(Type importType)
