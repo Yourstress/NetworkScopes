@@ -17,19 +17,20 @@ namespace NetworkScopes.CodeGeneration
 			get { return scopeAttribute.otherScopeType; }
 		}
 
-		public bool isServerScope { get; private set; }
-
 		public ScopeAttribute scopeAttribute { get; private set; }
 
 		public ClassDefinition scopeDefinition { get; private set; }
 
 		public SerializationProvider serializer { get; private set; }
 
-		public ScopeDefinition(Type scopeInterface, ScopeAttribute scopeAttribute, bool isServerScope, SerializationProvider serializer)
+		public EntityType entityType { get; private set; }
+		public bool isServerScope { get { return entityType == EntityType.Server; } }
+
+		public ScopeDefinition(Type scopeInterface, ScopeAttribute scopeAttribute, EntityType entityType, SerializationProvider serializer)
 		{
 			this.scopeInterface = scopeInterface;
 			this.scopeAttribute = scopeAttribute;
-			this.isServerScope = isServerScope;
+			this.entityType = entityType;
 			this.serializer = serializer;
 
 			string name = scopeInterface.Name;
