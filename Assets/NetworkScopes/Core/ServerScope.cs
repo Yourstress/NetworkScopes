@@ -22,6 +22,8 @@ namespace NetworkScopes
 
 		public INetworkPeer SenderPeer { get; private set; }
 
+		public IScopeRegistrar scopeRegistrar { get; private set; }
+
 		// stores NetworkPromise objects awaiting peer responses
 		private Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
 
@@ -30,11 +32,12 @@ namespace NetworkScopes
 			peers = new List<INetworkPeer>();
 		}
 
-		public void InitializeServerScope(IServerSignalProvider signalProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel)
+		public void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel)
 		{
+			this.scopeRegistrar = scopeProvider;
 			this.scopeIdentifier = scopeIdentifier;
 			this.currentChannel = scopeChannel;
-			_signalProvider = signalProvider;
+			_signalProvider = scopeProvider;
 
 			SignalMethodBinder.BindScope(this);
 

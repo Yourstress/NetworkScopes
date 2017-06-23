@@ -5,7 +5,7 @@ namespace NetworkScopes
 		ScopeIdentifier scopeIdentifier { get; }
 		ScopeChannel currentChannel { get; }
 
-		void InitializeServerScope(IServerSignalProvider signalProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel);
+		void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel);
 
 		void AddPeer(INetworkPeer peer);
 		void RemovePeer(INetworkPeer peer);

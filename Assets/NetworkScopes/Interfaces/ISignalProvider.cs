@@ -14,4 +14,15 @@ namespace NetworkScopes
 	{
 		void SendSignal(PeerTarget target, ISignalWriter writer);
 	}
+
+	public interface IScopeRegistrar
+	{
+		TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new();
+		void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope;
+	}
+
+	public interface IServerScopeProvider : IScopeRegistrar, IServerSignalProvider
+	{
+
+	}
 }

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace NetworkScopes
 {
-	public abstract class NetworkServer : IServerProvider, IServerSignalProvider
+	public abstract class NetworkServer : IServerProvider, IServerScopeProvider
 	{
 		// IServerProvider
 		public abstract bool IsListening { get; }
