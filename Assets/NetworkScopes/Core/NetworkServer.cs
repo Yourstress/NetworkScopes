@@ -53,6 +53,8 @@ namespace NetworkScopes
 
 		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
 		{
+			channelGenerator.DeallocateValue(scope.currentChannel);
+
 			if (!registeredScopes.Remove(scope.currentChannel))
 				throw new Exception(string.Format("The scope {0} is not registered.", scope));
 		}
