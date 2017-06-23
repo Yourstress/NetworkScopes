@@ -8,10 +8,10 @@ public class MyClientLobby : ClientScope<MyClientLobby.ISender>, MyClientLobby.I
 	public interface ISender : IScopeSender
 	{
 		ValuePromise<int> GetOnlinePlayerCount();
-		void LookForMatch();
+		void JoinAnyMatch();
 	}
 
-	public delegate void FoundMatchDelegate(LobbyMatch match);
+	public delegate void FoundMatchDelegate();
 
 	public event FoundMatchDelegate OnFoundMatch = delegate {};
 
@@ -28,22 +28,20 @@ public class MyClientLobby : ClientScope<MyClientLobby.ISender>, MyClientLobby.I
 		return promise;
 	}
 
-	void ISender.LookForMatch()
+	void ISender.JoinAnyMatch()
 	{
-		ISignalWriter writer = CreateSignal(-625843621 /*hash 'LookForMatch'*/);
+		ISignalWriter writer = CreateSignal(-1643540829 /*hash 'JoinAnyMatch'*/);
 		SendSignal(writer);
 	}
 
-	protected virtual void FoundMatch(LobbyMatch match)
+	protected virtual void FoundMatch()
 	{
 	}
 
 	protected void ReceiveSignal_FoundMatch(ISignalReader reader)
 	{
-		LobbyMatch match = new LobbyMatch();
-		match.Deserialize(reader);
-		OnFoundMatch(match);
-		FoundMatch(match);
+		OnFoundMatch();
+		FoundMatch();
 	}
 
 	protected void ReceivePromise_GetOnlinePlayerCount(ISignalReader reader)

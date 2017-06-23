@@ -7,7 +7,7 @@ public abstract class MyServerLobby_Abstract : ServerScope<MyServerLobby_Abstrac
 	[Generated]
 	public interface ISender : IScopeSender
 	{
-		void FoundMatch(LobbyMatch match);
+		void FoundMatch();
 	}
 
 	protected override ISender GetScopeSender()
@@ -15,15 +15,14 @@ public abstract class MyServerLobby_Abstract : ServerScope<MyServerLobby_Abstrac
 		return this;
 	}
 
-	void ISender.FoundMatch(LobbyMatch match)
+	void ISender.FoundMatch()
 	{
 		ISignalWriter writer = CreateSignal(-106459261 /*hash 'FoundMatch'*/);
-		match.Serialize(writer);
 		SendSignal(writer);
 	}
 
 	protected abstract int GetOnlinePlayerCount();
-	protected abstract void LookForMatch();
+	protected abstract void JoinAnyMatch();
 	protected void ReceiveSignal_GetOnlinePlayerCount(ISignalReader reader)
 	{
 		int promiseID = reader.ReadPromiseID();
@@ -34,9 +33,9 @@ public abstract class MyServerLobby_Abstract : ServerScope<MyServerLobby_Abstrac
 		SendSignal(writer, SenderPeer);
 	}
 
-	protected void ReceiveSignal_LookForMatch(ISignalReader reader)
+	protected void ReceiveSignal_JoinAnyMatch(ISignalReader reader)
 	{
-		LookForMatch();
+		JoinAnyMatch();
 	}
 
 }

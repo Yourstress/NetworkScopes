@@ -1,5 +1,4 @@
-﻿
-using NetworkScopes;
+﻿using NetworkScopes;
 using UnityEngine;
 
 public class SimpleLobby : ExampleSimpleNetwork
@@ -22,7 +21,7 @@ public class SimpleLobby : ExampleSimpleNetwork
         }
     }
 
-    private void OnFoundMatch(LobbyMatch match)
+    private void OnFoundMatch()
     {
         Debug.Log("Match found!");
     }
@@ -54,7 +53,7 @@ public class SimpleLobby : ExampleSimpleNetwork
             GUILayout.Label("Send Signal:");
             if (GUILayout.Button("OnFoundMatch"))
             {
-                serverLobby.SendToAll().FoundMatch(new LobbyMatch());
+                serverLobby.SendToAll().FoundMatch();
             }
         }
     }
@@ -67,9 +66,15 @@ public class SimpleLobby : ExampleSimpleNetwork
 
         if (_client.IsConnected)
         {
-            if (GUILayout.Button("Get Online Players"))
-                clientLobby.SendToServer.GetOnlinePlayerCount()
-                    .ContinueWith(t => { Debug.Log("Online Players: " + t); });
+            if (clientLobby.isActive)
+            {
+                if (GUILayout.Button("Get Online Players"))
+                    clientLobby.SendToServer.GetOnlinePlayerCount()
+                        .ContinueWith(t => { Debug.Log("Online Players: " + t); });
+
+                if (GUILayout.Button("Join Any Match"))
+                    clientLobby.SendToServer.JoinAnyMatch();
+            }
         }
     }
 

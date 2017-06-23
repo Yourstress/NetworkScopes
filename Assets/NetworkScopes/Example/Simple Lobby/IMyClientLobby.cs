@@ -5,5 +5,5 @@ using NetworkScopes;
 public interface IMyClientLobby
 {
     // this is a Signal thst is manually called at a later time.
-    void FoundMatch(LobbyMatch match);
+    void FoundMatch();
 }
