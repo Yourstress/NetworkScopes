@@ -69,6 +69,9 @@ namespace NetworkScopes
 			// remove peer promises handler (if one exists)
 			peerPromiseHandlers.Remove(peer);
 
+			// send exited event
+			ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
+
 			// notify inheritor class of this peer's exit
 			OnPeerExited(peer);
 		}
