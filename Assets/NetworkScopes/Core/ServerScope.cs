@@ -37,7 +37,7 @@ namespace NetworkScopes
 			this.currentChannel = scopeChannel;
 			_signalProvider = signalProvider;
 
-			SignalMethodBinder.BindScope(GetType());
+			SignalMethodBinder.BindScope(this);
 
 			isActive = true;
 		}

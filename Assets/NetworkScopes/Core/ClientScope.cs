@@ -28,7 +28,7 @@ namespace NetworkScopes
 
 			_signalProvider = serviceProvider;
 
-			SignalMethodBinder.BindScope(GetType());
+			SignalMethodBinder.BindScope(this);
 		}
 
 		protected ISignalWriter CreateSignal(int signalID)

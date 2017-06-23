@@ -41,7 +41,7 @@ namespace NetworkScopes
 		{
 			public Deserializer(Type scopeType)
 			{
-				List<MethodInfo> methods = scopeType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly).ToList();
+				List<MethodInfo> methods = scopeType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly | BindingFlags.FlattenHierarchy).ToList();
 
 				foreach (MethodInfo method in methods)
 				{
@@ -71,11 +71,25 @@ namespace NetworkScopes
 
 		private static Dictionary<Type, Deserializer> cachedDeserializers = new Dictionary<Type, Deserializer>(4);
 
-		public static void BindScope(Type scopeType)
+		public static void BindScope(IServerScope serverScope)
 		{
+			BindScopeInternal(serverScope.GetType(), typeof(ServerScope<>));
+		}
+
+		public static void BindScope(IClientScope clientScope)
+		{
+			BindScopeInternal(clientScope.GetType(), typeof(ClientScope<>));
+		}
+
+		private static void BindScopeInternal(Type scopeType, Type requiredBaseType)
+		{
+			Type scopeParentType = scopeType;
+			while (!scopeParentType.BaseType.IsGenericType || scopeParentType.BaseType.GetGenericTypeDefinition() != requiredBaseType)
+				scopeParentType = scopeParentType.BaseType;
+
 			if (!cachedDeserializers.ContainsKey(scopeType))
 			{
-				cachedDeserializers[scopeType] = new Deserializer(scopeType);
+				cachedDeserializers[scopeType] = new Deserializer(scopeParentType);
 			}
 		}
 
