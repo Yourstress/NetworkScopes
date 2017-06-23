@@ -88,7 +88,7 @@ namespace NetworkScopes.CodeGeneration
 
 					string concreteTypePath = ScopeDefinition.MakeScopeScriptPath(concreteTypeName, scope.scopeInterface.Name);
 
-					if (!File.Exists(concreteTypeName))
+					if (!File.Exists(concreteTypePath))
 						WriteClass(blankConcreteScope, concreteTypePath, logOnly);
 				}
 			}
