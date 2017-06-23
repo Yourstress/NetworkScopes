@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using NetworkScopes.Utilities;
-using UnityEngine;
 
 namespace NetworkScopes
 {

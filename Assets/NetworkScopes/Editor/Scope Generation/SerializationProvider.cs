@@ -212,7 +212,6 @@ namespace NetworkScopes.CodeGeneration
 					targetMethod.AddAssignmentInstruction(genericVariableName, variableName, string.Format("new Dictionary<{0},{1}>({2})", keyElementType.GetReadableName(), valElementType.GetReadableName(), lengthVarName));
 
 					// CODE: foreach loop and nested serialization
-					TypeDefinition kvpType = TypeDefinition.MakeGenericType(typeof(KeyValuePair<,>), keyElementType, valElementType);
 					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
 					AddDeserializationCommands(targetMethod, "key", keyElementType, DeserializationOptions.AllocateVariable);
 					AddDeserializationCommands(targetMethod, "val", valElementType, DeserializationOptions.AllocateVariable);

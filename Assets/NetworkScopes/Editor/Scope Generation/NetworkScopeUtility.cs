@@ -12,7 +12,6 @@ namespace NetworkScopes.CodeGeneration
 		public static List<ScopeDefinition> FindScopeDefinitions(SerializationProvider serializer)
 		{
 			List<ScopeDefinition> scopes = new List<ScopeDefinition>();
-			Type scopeAttrType = typeof(ScopeAttribute);
 
 			foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 			foreach (Type t in assembly.GetTypes())
@@ -25,9 +24,6 @@ namespace NetworkScopes.CodeGeneration
 
 				if (scopeAttr == null)
 					continue;
-
-				// [Scope] attribute has wrong type? error
-				Type otherScopeDefType = scopeAttr.otherScopeType;
 
 				// validate name
 				if (t.Name[0] != 'I')
