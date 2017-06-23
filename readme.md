@@ -153,5 +153,7 @@ A Signal is a network method call to a specific Scope (target network object). E
 Upcoming Features
 ------------------
 
+- Coroutine signals.
 - Customizable connection approval validation. Easily define how clients should authenticate with the server, including which parameters are sent and how it's validated.
 - Peer Data per Scope.
+- Enable/disable scope activity logging.
