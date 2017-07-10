@@ -20,6 +20,11 @@ namespace NetworkScopes
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel currentChannel { get; private set; }
 
+		/// <summary>
+		/// The scope to hand over the peers to when removed from this scope.
+		/// </summary>
+		public IServerScope fallbackScope;
+
 		public INetworkPeer SenderPeer { get; private set; }
 
 		public IScopeRegistrar scopeRegistrar { get; private set; }
@@ -72,12 +77,17 @@ namespace NetworkScopes
 			// remove peer promises handler (if one exists)
 			peerPromiseHandlers.Remove(peer);
 
-			// send exited event (only if the peer is still connected)
-			if (!peer.isDestroyed)
-				ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
-
 			// notify inheritor class of this peer's exit
 			OnPeerExited(peer);
+
+			// send exited event (only if the peer is still connected)
+			if (!peer.isDestroyed)
+			{
+				ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
+
+				if (fallbackScope != null)
+					fallbackScope.AddPeer(peer);
+			}
 		}
 
 		public void RemoveAllPeers()
