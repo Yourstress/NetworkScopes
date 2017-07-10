@@ -14,4 +14,10 @@ public abstract class MyServerMatch_Abstract : ServerScope<MyServerMatch_Abstrac
 		return this;
 	}
 
+	protected abstract void LeaveMatch();
+	protected void ReceiveSignal_LeaveMatch(ISignalReader reader)
+	{
+		LeaveMatch();
+	}
+
 }

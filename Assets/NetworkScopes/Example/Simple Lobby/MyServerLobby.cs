@@ -33,7 +33,10 @@ public class MyServerLobby : MyServerLobby_Abstract
 		}
 
 		// if none was found, register a new match scope
-		MyServerMatch match = scopeRegistrar.RegisterScope<MyServerMatch>(1);
+		MyServerMatch match = scopeRegistrar.RegisterScope<MyServerMatch>(2);
+
+		// make it so removing a peer from the match (via the RemovePeer method) adds the peer back to this scope
+		match.fallbackScope = this;
 
 		matches.Add(match);
 

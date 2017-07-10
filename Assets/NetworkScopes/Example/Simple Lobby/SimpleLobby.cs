@@ -6,11 +6,13 @@ public class SimpleLobby : ExampleSimpleNetwork
     public bool autoConnect = true;
     private MyServerLobby serverLobby;
     private MyClientLobby clientLobby;
+    private MyClientMatch clientMatch;
 
     public override void RegisterScopes()
     {
         serverLobby = _server.RegisterScope<MyServerLobby>(1);
         clientLobby = _client.RegisterScope<MyClientLobby>(1);
+        clientMatch = _client.RegisterScope<MyClientMatch>(2);
 
         clientLobby.OnFoundMatch += OnFoundMatch;
 
@@ -63,6 +65,9 @@ public class SimpleLobby : ExampleSimpleNetwork
         base.DrawClientGUI();
 
         DrawScope(clientLobby);
+        DrawScope(clientMatch);
+
+
 
         if (_client.IsConnected)
         {
@@ -74,6 +79,11 @@ public class SimpleLobby : ExampleSimpleNetwork
 
                 if (GUILayout.Button("Join Any Match"))
                     clientLobby.SendToServer.JoinAnyMatch();
+            }
+            if (clientMatch.isActive)
+            {
+                if (GUILayout.Button("Leave Match"))
+                    clientMatch.SendToServer.LeaveMatch();
             }
         }
     }
