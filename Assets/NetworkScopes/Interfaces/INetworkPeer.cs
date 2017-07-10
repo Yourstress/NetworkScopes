@@ -5,6 +5,7 @@ namespace NetworkScopes
     public interface INetworkPeer
     {
         string ipAddress { get; }
+        bool isDestroyed { get; }
 
         void Disconnect();
         void TriggerDisconnectEvent();

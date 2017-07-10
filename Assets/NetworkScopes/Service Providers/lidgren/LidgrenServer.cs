@@ -9,6 +9,8 @@ namespace NetworkScopes.ServiceProviders.Lidgren
         private NetServer _netServer;
         private LidgrenMessageReceiver _receiver;
 
+        private readonly Dictionary<NetConnection, LidgrenPeer> _peers = new Dictionary<NetConnection, LidgrenPeer>();
+
         /// <summary>
         /// Override to customize server configuration.
         /// </summary>
@@ -54,7 +56,16 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 
                 _netServer.Shutdown(null);
                 _netServer = null;
+
+                RemoveAllPeers();
             }
+        }
+
+        public void RemoveAllPeers()
+        {
+            List<LidgrenPeer> peers = new List<LidgrenPeer>(_peers.Values);
+            foreach (INetworkPeer peer in peers)
+                peer.TriggerDisconnectEvent();
         }
 
         public override ISignalWriter CreateSignal(short scopeChannel)
@@ -79,8 +90,6 @@ namespace NetworkScopes.ServiceProviders.Lidgren
                 }
             }
         }
-
-        private readonly Dictionary<NetConnection, LidgrenPeer> _peers = new Dictionary<NetConnection, LidgrenPeer>();
 
         public IEnumerable<LidgrenPeer> peers
         {

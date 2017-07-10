@@ -6,10 +6,14 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 	{
 		public abstract string ipAddress { get; }
 
+		public bool isDestroyed { get; private set; }
+
 		public abstract void Disconnect();
 
 		public void TriggerDisconnectEvent()
 		{
+			isDestroyed = true;
+
 			OnDisconnect(this);
 		}
 

@@ -72,11 +72,19 @@ namespace NetworkScopes
 			// remove peer promises handler (if one exists)
 			peerPromiseHandlers.Remove(peer);
 
-			// send exited event
-			ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
+			// send exited event (only if the peer is still connected)
+			if (!peer.isDestroyed)
+				ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
 
 			// notify inheritor class of this peer's exit
 			OnPeerExited(peer);
+		}
+
+		public void RemoveAllPeers()
+		{
+			// remove all peers in reverse order to avoid List element copying
+			for (var x = peers.Count - 1; x >= 0; x--)
+				RemovePeer(peers[x]);
 		}
 
 		NetworkPromiseHandler GetPromiseHandler(INetworkPeer peer)
