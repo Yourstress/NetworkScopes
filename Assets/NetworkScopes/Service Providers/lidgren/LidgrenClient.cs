@@ -27,7 +27,6 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 
 		public NetClient netClient { get; private set; }
 
-		private NetConnection _connection;
 		private LidgrenMessageReceiver _receiver;
 
 		/// <summary>
@@ -54,7 +53,7 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 				Initialize();
 			}
 
-			_connection = netClient.Connect(hostnameOrIP, port);
+			netClient.Connect(hostnameOrIP, port);
 		}
 
 		public override void Disconnect()
@@ -105,7 +104,7 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 
 		public override void SendSignal(ISignalWriter signal)
 		{
-			_connection.SendMessage(((LidgrenSignalWriter) signal).netMessage, NetDeliveryMethod.ReliableOrdered, 0);
+			netClient.ServerConnection.SendMessage(((LidgrenSignalWriter) signal).netMessage, NetDeliveryMethod.ReliableOrdered, 0);
 		}
 	}
 }
