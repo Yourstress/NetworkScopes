@@ -1,7 +1,5 @@
 using System;
-using System.Runtime.Remoting.Messaging;
 using Lidgren.Network;
-using UnityEngine;
 
 namespace NetworkScopes.ServiceProviders.Lidgren
 {

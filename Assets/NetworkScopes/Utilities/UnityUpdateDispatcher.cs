@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using NetworkScopes.ServiceProviders.Lidgren;
 using UnityEngine;
 
 namespace NetworkScopes.Utilities
