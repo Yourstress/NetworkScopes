@@ -1,6 +1,6 @@
 ﻿
 using Lidgren.Network;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -83,7 +83,7 @@ namespace NetworkScopes
 		/// <param name="peer">The target Peer.</param>
 		public virtual void AddPeer(TPeer peer, bool sendEnterMsg = true)
 		{
-//			Debug.LogFormat("<color=cyan>ADDING {0}</color> to {1}", peer, GetType().Name);
+//			NetworkDebug.LogFormat("<color=cyan>ADDING {0}</color> to {1}", peer, GetType().Name);
 			Peers.Add(peer);
 
 			// register for disconnection to clean up after this peer
@@ -112,7 +112,7 @@ namespace NetworkScopes
 			}
 			else
 			{
-				Debug.LogFormat("Failed to remove non-existent peer {0} from scope {1}", peer, GetType().Name);
+				NetworkDebug.LogFormat("Failed to remove non-existent peer {0} from scope {1}", peer, GetType().Name);
 			}
 		}
 			

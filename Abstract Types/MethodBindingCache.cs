@@ -1,6 +1,6 @@
 ﻿
 using Lidgren.Network;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -29,11 +29,11 @@ namespace NetworkScopes
 			catch (Exception e)
 			{
 				if (method != null)
-					Debug.LogErrorFormat("Failed to call method {0}.{1}", method.DeclaringType.Name, method.Name);
+					NetworkDebug.LogErrorFormat("Failed to call method {0}.{1}", method.DeclaringType.Name, method.Name);
 				else
-					Debug.LogErrorFormat("Failed to call unbound method in {0}", rootObject.GetType().Name);
+					NetworkDebug.LogErrorFormat("Failed to call unbound method in {0}", rootObject.GetType().Name);
 
-				Debug.LogException(e);
+				NetworkDebug.LogException(e);
 			}
 		}
 	}
@@ -65,7 +65,7 @@ namespace NetworkScopes
 						continue;
 
 					if (recvMethod.ReturnType != typeof(void))
-						Debug.Log("Found " + recvMethod.Name);
+						NetworkDebug.Log("Found " + recvMethod.Name);
 
 					Add(method.Name.GetConsistentHashCode(), recvMethod);
 				}
@@ -106,7 +106,7 @@ namespace NetworkScopes
 					// if no method was found, don't create the delegate
 					if (recvMethod == null)
 					{
-						Debug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, scopeType.Name);
+						NetworkDebug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, scopeType.Name);
 						continue;
 					}
 
@@ -153,7 +153,7 @@ namespace NetworkScopes
 
 			if (!deserializer.TryGetValue(signalType, out method))
 			{
-				Debug.LogErrorFormat("Could not find method with signal type {0} in {1}", signalType, scopeType.Name);
+				NetworkDebug.LogErrorFormat("Could not find method with signal type {0} in {1}", signalType, scopeType.Name);
 			}
 
 

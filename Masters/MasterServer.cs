@@ -1,7 +1,7 @@
 ﻿
 //#define SHOW_UNKNOWN_CHANNEL_SIGNALS
 
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -110,7 +110,7 @@ namespace NetworkScopes
 				scope.Dispose();
 			}
 			else
-				Debug.LogWarningFormat("Failed to remove the Scope {0} because it was not registered with the MasterServer.", scope.GetType());
+				NetworkDebug.LogWarningFormat("Failed to remove the Scope {0} because it was not registered with the MasterServer.", scope.GetType());
 		}
 		#endregion
 
@@ -173,7 +173,7 @@ namespace NetworkScopes
 						}
 						else
 						{
-							Debug.LogFormat("Failed to remove peer " + msg.SenderEndPoint.Address + " connection " + msg.SenderConnection);
+							NetworkDebug.LogFormat("Failed to remove peer " + msg.SenderEndPoint.Address + " connection " + msg.SenderConnection);
 						}
 					}
 
@@ -239,7 +239,7 @@ namespace NetworkScopes
 			{
 				#if SHOW_UNKNOWN_CHANNEL_SIGNALS
 				int signalType = msg.PeekInt32();
-				Debug.LogWarningFormat("Server could not process signal {1} on unknown channel {0}.", msgType, signalType);
+				NetworkDebug.LogWarningFormat("Server could not process signal {1} on unknown channel {0}.", msgType, signalType);
 				#endif
 			}
 		}
@@ -257,7 +257,7 @@ namespace NetworkScopes
 				OnPeerDisconnected(peer);
 			}
 			else
-				Debug.Log("<color=red>Failed</color> to remove peer " + netPeer);
+				NetworkDebug.Log("<color=red>Failed</color> to remove peer " + netPeer);
 		}
 	}
 }

@@ -1,6 +1,6 @@
 ﻿
 using Lidgren.Network;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -113,7 +113,7 @@ namespace NetworkScopes
 
 				if (networkVariable == null)
 				{
-					Debug.LogError($"Could not find NetworkVariable (id={objId}) in the scope '{GetType().Name}'.");
+					NetworkDebug.LogError($"Could not find NetworkVariable (id={objId}) in the scope '{GetType().Name}'.");
 					return;
 				}
 

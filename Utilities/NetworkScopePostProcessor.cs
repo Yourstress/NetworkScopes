@@ -8,9 +8,13 @@ using CodeGeneration;
 using System.Reflection;
 using System.IO;
 using NetworkScopes;
-using UnityEngine;
+
 using NetworkScopes.CodeProcessors;
+
+#if UNITY_EDITOR
+using UnityEngine;
 using UnityEditor;
+#endif
 
 public class NetworkScopeConstants
 {
@@ -28,11 +32,11 @@ public static class NetworkScopePostProcessor
 	[MenuItem("Network Scopes/Generate Code")]
 	static void GenerateCode()
 	{
-		GenerateNetworkScopesV1Classes(Application.dataPath);
+		GenerateNetworkScopes(Application.dataPath);
 	}
 #endif
 
-	public static void GenerateNetworkScopesV1Classes(string path)
+	public static void GenerateNetworkScopes(string path)
 	{
 		GenerateAuthenticationCode();
 		GenerateNetworkClasses<ScopeAttribute>(NetworkScopeUtility.SerializerClass);

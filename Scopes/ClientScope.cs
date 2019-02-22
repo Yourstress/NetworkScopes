@@ -1,5 +1,5 @@
 ﻿
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -94,7 +94,7 @@ namespace NetworkScopes
 					queuedSignalWriters.Enqueue(msg);
 				// otherwise, just display a warning message
 				else
-					Debug.LogWarningFormat("Ignoring Signal sending because the Scope <color=white>{0}</color> is no longer active", GetType().Name);
+					NetworkDebug.LogWarningFormat("Ignoring Signal sending because the Scope <color=white>{0}</color> is no longer active", GetType().Name);
 			}
 		}
 

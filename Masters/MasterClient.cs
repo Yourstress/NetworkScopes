@@ -1,5 +1,5 @@
 ﻿using NetworkScopes.Utilities;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -113,7 +113,7 @@ namespace NetworkScopes
 				scope.Dispose();
 			}
 			else
-				Debug.LogWarningFormat("Failed to remove the Scope {0} because it was not registered with the MasterServer.", scope);
+				NetworkDebug.LogWarningFormat("Failed to remove the Scope {0} because it was not registered with the MasterServer.", scope);
 		}
 
 		#endregion
@@ -155,7 +155,7 @@ namespace NetworkScopes
 				SetupClient();
 
 			if (enableLogging)
-				Debug.LogFormat("[MasterClient] Connecting to {0}:{1}", hostname, port);
+				NetworkDebug.LogFormat("[MasterClient] Connecting to {0}:{1}", hostname, port);
 
 			IsConnecting = true;
 
@@ -168,7 +168,7 @@ namespace NetworkScopes
 			catch (Exception e)
 			{
 				OnLidgrenDisconnected();
-				Debug.LogException(e);
+				NetworkDebug.LogException(e);
 			}
 		}
 
@@ -177,7 +177,7 @@ namespace NetworkScopes
 			if (IsConnected || IsConnecting)
 			{
 				if (enableLogging)
-					Debug.Log("[MasterClient] Manual disconnect");
+					NetworkDebug.Log("[MasterClient] Manual disconnect");
 
 				CleanActiveScopes();
 
@@ -194,7 +194,7 @@ namespace NetworkScopes
 			else
 			{
 				if (enableLogging)
-					Debug.Log("[MasterClient] Manual disconnect ignored because client is not connected or establishing a connection");
+					NetworkDebug.Log("[MasterClient] Manual disconnect ignored because client is not connected or establishing a connection");
 			}
 		}
 
@@ -289,7 +289,7 @@ namespace NetworkScopes
 						break;
 					default:
 					{
-						Debug.Log("Unhandled message received.");
+						NetworkDebug.Log("Unhandled message received.");
 						break;
 					}
 				}
@@ -301,7 +301,7 @@ namespace NetworkScopes
 		void OnLidgrenConnected()
 		{
 			if (enableLogging)
-				Debug.Log("[MasterClient] Connected to Server");
+				NetworkDebug.Log("[MasterClient] Connected to Server");
 
 			IsConnecting = false;
 			IsConnected = true;
@@ -317,7 +317,7 @@ namespace NetworkScopes
 			if (IsConnected)
 			{
 				if (enableLogging)
-					Debug.Log("[MasterClient] Disconnected from Server");
+					NetworkDebug.Log("[MasterClient] Disconnected from Server");
 				IsConnected = false;
 
 				OnWillDisconnect();
@@ -336,7 +336,7 @@ namespace NetworkScopes
 				DestroyClient();
 
 				if (enableLogging)
-					Debug.Log("[MasterClient] Could not establish a connection within the timeout period");
+					NetworkDebug.Log("[MasterClient] Could not establish a connection within the timeout period");
 
 				OnConnectFailed();
 
@@ -398,7 +398,7 @@ namespace NetworkScopes
 				this.hostname = hostname;
 
 			if (enableLogging)
-				Debug.LogFormat("Redirected to {0}:{1}", hostname, port);
+				NetworkDebug.LogFormat("Redirected to {0}:{1}", hostname, port);
 
 			if (IsRedirecting)
 				throw new Exception("Already being redirected. Ignoring redirect message.");
@@ -442,12 +442,12 @@ namespace NetworkScopes
 			// find it in the inactive scopes
 			if (!inactiveScopes.TryGetValue(scopeIdentifier, out scope))
 			{
-				Debug.LogWarning("Active Scopes");
+				NetworkDebug.LogWarning("Active Scopes");
 				foreach (var sc in activeScopes.Values)
-					Debug.LogWarning(sc.GetType());
-				Debug.LogWarning("Inactive Scopes");
+					NetworkDebug.LogWarning(sc.GetType());
+				NetworkDebug.LogWarning("Inactive Scopes");
 				foreach (var sc in inactiveScopes.Values)
-					Debug.LogWarning(sc.GetType());
+					NetworkDebug.LogWarning(sc.GetType());
 
 				throw new Exception(string.Format("Received an EnterScope message for a scope that is not active (ID={0}).", scopeIdentifier));
 			}

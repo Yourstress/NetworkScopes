@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿
 
 namespace NetworkScopes
 {
@@ -109,7 +109,7 @@ namespace NetworkScopes
 				};
 			}
 
-			Debug.Log("Could not serialize type " + type);
+			NetworkDebug.Log("Could not serialize type " + type);
 
 			return null;
 		}

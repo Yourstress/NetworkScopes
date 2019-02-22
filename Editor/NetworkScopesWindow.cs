@@ -1,13 +1,14 @@
 ﻿
-using System;
-using System.IO;
-using System.Linq;
+#if UNITY_EDITOR
 
 namespace NetworkScopes.Editor
 {
-	using UnityEngine;
 	using UnityEditor;
 	using System.Collections.Generic;
+	using UnityEngine;
+	using System;
+	using System.IO;
+	using System.Linq;
 
 	public class NetworkScopesWindow : EditorWindow
 	{
@@ -126,7 +127,7 @@ namespace NetworkScopes.Editor
 				currentFileLines.AddRange(_selectedProcessor.preGeneratedContents.ConvertTabs().Split('\n'));
 			}
 			else
-				Debug.Log("File doesn't exist at " + currentFilePath);
+				NetworkDebug.Log("File doesn't exist at " + currentFilePath);
 
 			generatedFileLines.AddRange(_selectedProcessor.postGeneratedContents.ConvertTabs().Split('\n'));
 
@@ -234,7 +235,7 @@ namespace NetworkScopes.Editor
 				{
 					AssetDatabase.Refresh();
 
-					Debug.Log($"NetworkScopes generated {numSaved} classes.");
+					NetworkDebug.Log($"NetworkScopes generated {numSaved} classes.");
 				}
 			}
 
@@ -333,3 +334,4 @@ namespace NetworkScopes.Editor
 		}
 	}
 }
+#endif

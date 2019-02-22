@@ -1,5 +1,5 @@
 ﻿
-using UnityEngine;
+
 
 namespace NetworkScopes.CodeProcessors
 {
@@ -33,7 +33,7 @@ namespace NetworkScopes.CodeProcessors
 
 				if (netVariableSerialization == null)
 				{
-					Debug.LogErrorFormat($"Failed to serialize NetworkObject<{netVariableType.Name}> in {classDef.Name} because the type {netVariableType.Name} is not serializable.");
+					NetworkDebug.LogErrorFormat($"Failed to serialize NetworkObject<{netVariableType.Name}> in {classDef.Name} because the type {netVariableType.Name} is not serializable.");
 					return;
 				}
 

@@ -1,5 +1,5 @@
 ﻿using Lidgren.Network;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -409,7 +409,7 @@ namespace NetworkScopes
 			}
 
 			// can't find serializer? exit out
-			Debug.LogWarningFormat("Could not find a serializer for the type '{0}'", elementType.FullName);
+			NetworkDebug.LogWarningFormat("Could not find a serializer for the type '{0}'", elementType.FullName);
 
 			return false;
 		}
@@ -492,7 +492,7 @@ namespace NetworkScopes
 			}
 
 			// can't find serializer? exit out
-			Debug.LogWarningFormat("Could not find a deserializer for the type '{0}'", elementType.FullName);
+			NetworkDebug.LogWarningFormat("Could not find a deserializer for the type '{0}'", elementType.FullName);
 
 			return false;
 		}

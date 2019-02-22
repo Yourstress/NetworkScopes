@@ -50,7 +50,7 @@ namespace NetworkScopes
 			IsActive = true;
 			
 			#if NS_DEBUG_SCOPE_ACTIVITY
-            Debug.LogFormat("Entered Scope {0}", GetType().Name);
+            NetworkDebug.LogFormat("Entered Scope {0}", GetType().Name);
 #endif
 
 #if UNITY_EDITOR && SCOPE_DEBUGGING
@@ -70,7 +70,7 @@ namespace NetworkScopes
 		public void ExitScope()
 		{
 			#if NS_DEBUG_SCOPE_ACTIVITY
-            Debug.LogFormat("Exited Scope {0}", GetType().Name);
+            NetworkDebug.LogFormat("Exited Scope {0}", GetType().Name);
 			#endif
 
 			#if UNITY_EDITOR && SCOPE_DEBUGGING

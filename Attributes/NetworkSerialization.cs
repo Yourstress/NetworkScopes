@@ -1,6 +1,6 @@
 
 using System.Collections.Generic;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -31,7 +31,7 @@ namespace NetworkScopes
 
 		public void Serialize(T value, NetOutgoingMessage writer)
 		{
-			Debug.Log("Target is " + serializeAction.Target);
+			NetworkDebug.Log("Target is " + serializeAction.Target);
 			serializeAction(value, writer);
 		}
 
@@ -66,7 +66,7 @@ namespace NetworkScopes
 			}
 
 			if (serializer == null)
-				Debug.Log("Could not find runtime serializer for " + typeof(T));
+				NetworkDebug.Log("Could not find runtime serializer for " + typeof(T));
 
 			return (NetworkSerializer<T>)serializer;
 		}

@@ -1,7 +1,7 @@
 ﻿using System;
 using CodeGeneration;
 using Lidgren.Network;
-using UnityEngine;
+
 
 namespace NetworkScopes
 {
@@ -152,7 +152,7 @@ namespace NetworkScopes.CodeProcessors
 			// validate type
 			if (authObjectType == null)
 			{
-				Debug.LogWarning($"Could not add Authenticator for {requestingType.Name}. Make sure your authenticator interface requires INetworkAuthenticator<TPeer,T>.");
+				NetworkDebug.LogWarning($"Could not add Authenticator for {requestingType.Name}. Make sure your authenticator interface requires INetworkAuthenticator<TPeer,T>.");
 				return null;
 			}
 
@@ -161,12 +161,12 @@ namespace NetworkScopes.CodeProcessors
 
 			if (authSerialization == null)
 			{
-				Debug.LogWarning($"Could not add Authenticator for {requestingType.Name} because the type used in the Authenticator '{authObjectType.Name}' is not serializable. Consider using a [{nameof(NetworkSerialization)}] attribute on your class.");
+				NetworkDebug.LogWarning($"Could not add Authenticator for {requestingType.Name} because the type used in the Authenticator '{authObjectType.Name}' is not serializable. Consider using a [{nameof(NetworkSerialization)}] attribute on your class.");
 				return null;
 			}
 			if (authSerialization.isValueType)
 			{
-				Debug.LogWarning($"Could not add Authenticator for {requestingType.Name} because the type used in the Authenticator '{authObjectType.Name}' is a value type.");
+				NetworkDebug.LogWarning($"Could not add Authenticator for {requestingType.Name} because the type used in the Authenticator '{authObjectType.Name}' is a value type.");
 				return null;
 			}
 
