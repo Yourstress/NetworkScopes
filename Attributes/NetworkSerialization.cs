@@ -31,7 +31,6 @@ namespace NetworkScopes
 
 		public void Serialize(T value, NetOutgoingMessage writer)
 		{
-			NetworkDebug.Log("Target is " + serializeAction.Target);
 			serializeAction(value, writer);
 		}
 
