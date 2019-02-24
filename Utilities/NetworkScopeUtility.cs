@@ -48,19 +48,26 @@ namespace NetworkScopes
 			{
 				foreach (Type type in assembly.GetTypes())
 				{
-					object[] attrs = type.GetCustomAttributes(false);
-
-					if (attrs.Length == 0)
-						continue;
-
-					for (int x = 0; x < attrs.Length; x++)
+					try
 					{
-						if (attrs[x].GetType() == injectorAttributeType)
+						object[] attrs = type.GetCustomAttributes(false);
+
+						if (attrs.Length == 0)
+							continue;
+
+						for (int x = 0; x < attrs.Length; x++)
 						{
-							ScopeAttribute attr = (ScopeAttribute)attrs[x];
-							netScopeTypes.Add(new NetworkScopeProcessor(type, attr));
-							break;
+							if (attrs[x].GetType() == injectorAttributeType)
+							{
+								ScopeAttribute attr = (ScopeAttribute) attrs[x];
+								netScopeTypes.Add(new NetworkScopeProcessor(type, attr));
+								break;
+							}
 						}
+					}
+					catch
+					{
+						// ignored
 					}
 				}
 			}
