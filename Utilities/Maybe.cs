@@ -1,12 +1,8 @@
-using Lidgren.Network;
-using PokerLegends.Cloud;
-using UnityEngine;
 
 namespace NetworkScopes
 {
 	// Contains an instance of T1 or T2
-	[NetworkSerialization(NetworkSerializeSettings.Custom)]
-	public class Maybe<TValue,TError>
+	public class Maybe<TValue,TError> : ISerializable
 		where TValue : class, new()
 		where TError : class, new()
 	{
@@ -50,33 +46,24 @@ namespace NetworkScopes
 			return new Maybe<TValue, TError> { Error = error };
 		}
 
-		public static void NetworkSerialize(Maybe<TValue, TError> value, NetOutgoingMessage writer)
+		public void Read(IncomingNetworkPacket packet)
 		{
-			writer.Write(value.HasValue);
+			HasValue = packet.ReadBoolean();
 
-			if (value.HasValue)
-				NetworkSerializer.Write(value._value, writer);
+			if (HasValue)
+				_value = packet.ReadObject<TValue>();
 			else
-				NetworkSerializer.Write(value._error, writer);
+				_error = packet.ReadObject<TError>();
 		}
 
-		public static void NetworkDeserialize(Maybe<TValue, TError> value, NetIncomingMessage reader)
+		public void Write(OutgoingNetworkPacket packet)
 		{
-			value.HasValue = reader.ReadBoolean();
+			packet.Write(HasValue);
 
-
-			if (value.HasValue)
-			{
-				if (value._value == null)
-					value._value = new TValue();
-				NetworkSerializer.Read(value._value, reader);
-			}
+			if (HasValue)
+				packet.WriteObject(_value);
 			else
-			{
-				if (value._error == null)
-					value._error = new TError();
-				NetworkSerializer.Read(value._error, reader);
-			}
+				packet.WriteObject(_error);
 		}
 	}
 }

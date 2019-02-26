@@ -1,8 +1,6 @@
 ﻿
 //#define SHOW_UNKNOWN_CHANNEL_SIGNALS
 
-
-
 namespace NetworkScopes
 {
 	using System;
@@ -134,7 +132,7 @@ namespace NetworkScopes
 			{
 				_receiver.Dispose();
 				_receiver = null;
-				
+
 				netServer.Shutdown(null);
 				netServer = null;
 			}
@@ -226,14 +224,16 @@ namespace NetworkScopes
 		
 		void OnLidgrenDataReceived(NetIncomingMessage msg, TPeer sender)
 		{
-			short msgType = msg.ReadInt16();
+			IncomingNetworkPacket packet = NetworkPacket.FromMessage(msg);
+
+			short msgType = packet.ReadShort();
 
 			BaseServerScope<TPeer> targetScope;
 			
 			// in order to receive a signal, the receiving scope must be active (got an Entered Scope system message).
 			if (scopesByMsgType.TryGetValue(msgType, out targetScope))
 			{
-				targetScope.ProcessPeerSignal(msg, sender);
+				targetScope.ProcessPeerSignal(packet, sender);
 			}
 			else
 			{

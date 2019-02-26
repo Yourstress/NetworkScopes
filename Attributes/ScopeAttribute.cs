@@ -1,17 +1,13 @@
-﻿using Lidgren.Network;
-
-
+﻿
 namespace NetworkScopes
 {
 	using System;
-	using System.Linq;
 	using System.Reflection;
 	using CodeGeneration;
-	using NetworkScopes.CodeProcessors;
 
 	public class ScopeAttribute : InjectAttribute
 	{
-		Type remoteType;
+		readonly Type remoteType;
 
 		public ScopeAttribute(Type remoteType)
 		{
@@ -22,10 +18,6 @@ namespace NetworkScopes
 		{
 			// find remote methods
 			MethodInfo[] remoteMethods = remoteType.GetMethods();
-
-			// find local & remote NetworkObjects
-			FieldInfo[] localNetObjFields = NetworkVariableProcessor.GetNetworkVariableFields(classType, true).ToArray();
-			FieldInfo[] remoteNetObjFields = NetworkVariableProcessor.GetNetworkVariableFields(remoteType, true).ToArray();
 
 			bool isServer = !classType.IsSubclassOf(typeof(ClientScope));
 
@@ -49,9 +41,11 @@ namespace NetworkScopes
 			// create and setup writer
 			ClassDefinition fakeRemoteClass = new ClassDefinition(string.Format("Remote{0}", remoteType.Name));
 			{
-				fakeRemoteClass.imports.Add("System.Collections.Generic");
+				// this is needed for IEnumerable<Peer>
+				if (isServer)
+					fakeRemoteClass.imports.Add("System.Collections.Generic");
+
 				fakeRemoteClass.imports.Add("NetworkScopes");
-				fakeRemoteClass.imports.Add("Lidgren.Network");
 
 				string msgSenderType = isServer ? $"IPeerMessageSender<{peerTypeName}>" : "IMessageSender";
 
@@ -67,14 +61,6 @@ namespace NetworkScopes
 				// assign it in the body
 				ctor.instructions.AddInstruction("_netSender = netSender;");
 			}
-
-			// local has fields? add registration code to scope
-			if (localNetObjFields.Length > 0)
-				NetworkVariableProcessor.GenerateNetworkVariableCode(classDef, localNetObjFields, true);
-
-			// remote has fields? add registration code to scope and create local fields
-			if (remoteNetObjFields.Length > 0)
-				NetworkVariableProcessor.GenerateNetworkVariableCode(classDef, remoteNetObjFields, false);
 
 			// find remote methods with "Signal" attribute; the SEND methods
 			bool didCreateAnySendMethods = false;
@@ -235,22 +221,18 @@ namespace NetworkScopes
 			signalResponseData.ImportTypesInto(responseMethodDef);
 
 			// only has one parameter: NetworkReader
-			responseMethodDef.parameters.Add(new ParameterDefinition("reader", NetworkScopeUtility.readerType));
+			responseMethodDef.parameters.Add(new ParameterDefinition("packet", typeof(IncomingNetworkPacket)));
 
-			IVariableSerialization serialization = NetworkVariableProcessor.GetVariableSerialization(signalResponseData.responseType, false, NetworkVariableProcessor.VariableType.Auto);
+			Type retType = remoteMethod.ReturnType;
+
+			retType = retType.GetGenericArguments()[0];
 
 			int signalType = responseMethodDef.Name.GetConsistentHashCode();
 			string optionalPeerParameter = isServer ? "SenderPeer, " : "";
-
-			// _Remote.remoteResponseTasks.DequeueResponseObject<Computer>(SenderPeer, -844153654, reader, Computer.NetworkDeserialize);
-
-			string deserializeMethodSignature = serialization.CreateNetworkDeserializationMethodSignature();
-			string methodName = serialization.isValueType
-				? "DequeueResponseValue"
-				: $"DequeueResponseObject<{signalResponseData.ResponseTypeName}>";
+			string deserializeCall = SerializationUtility.MakeReadCall("packet", retType);
 
 			string dequeueInstruction =
-				$"_Remote.remoteResponseTasks.{methodName}({optionalPeerParameter}{signalType}, reader, {deserializeMethodSignature});";
+				$"_Remote.remoteResponseTasks.DequeueResponse({optionalPeerParameter}{signalType}, {deserializeCall});";
 
 			responseMethodDef.instructions.AddInstruction(dequeueInstruction);
 
@@ -262,7 +244,7 @@ namespace NetworkScopes
 			MethodDefinition receiveMethodDef = new MethodDefinition("Receive_" + localMethod.Name);
 
 			// only has one parameter: NetworkReader
-			receiveMethodDef.parameters.Add(new ParameterDefinition("reader", NetworkScopeUtility.readerType));
+			receiveMethodDef.parameters.Add(new ParameterDefinition("packet", typeof(IncomingNetworkPacket)));
 
 			ParameterInfo[] paramInfos = localMethod.GetParameters();
 
@@ -279,24 +261,29 @@ namespace NetworkScopes
 				// if this method is returning something to the other side, put it in a var
 				if (isTwoWaySignal)
 				{
+					receiveMethodDef.Import(typeof(NetworkScopes.Signal));
+
 					SignalResponseData signalResponseData = new SignalResponseData(localMethod);
 
 					signalResponseData.ImportTypesInto(receiveMethodDef);
 
 					if (signalResponseData.isTask)
-					{
 						receiveMethodDef.IsAsync = true;
-					}
-					// call receiving method, and store its return value
-					receiveMethodDef.instructions.AddInstruction($"{signalResponseData.ResponseTypeName} signalResponse = {(signalResponseData.isTask ? "await " : "")}{localMethod.Name}({string.Join(", ", Array.ConvertAll(paramInfos, pi => pi.Name))});");
 
 					int signalType = $"Response_{localMethod.Name}".GetConsistentHashCode();
 
-					receiveMethodDef.Import(typeof(NetworkScopes.Signal));
+					// call receiving method, and store its return value
+					receiveMethodDef.instructions.AddInstruction($"{signalResponseData.ResponseTypeName} responseObject = {(signalResponseData.isTask ? "await " : "")}{localMethod.Name}({string.Join(", ", Array.ConvertAll(paramInfos, pi => pi.Name))});");
+					receiveMethodDef.instructions.AddInstruction("");
+
+					// create response packet
+					receiveMethodDef.instructions.AddInstruction($"{typeof(OutgoingNetworkPacket).GetTypeName()} responsePacket = CreatePacket({signalType});");
+
+					// serialize response object
+					receiveMethodDef.instructions.AddInstruction(SerializationUtility.MakeWriteStatement("responseObject", "responsePacket", signalResponseData.responseType));
 
 					// send out send the returned value
-					IVariableSerialization serialization = NetworkVariableProcessor.GetVariableSerialization(signalResponseData.responseType, false, NetworkVariableProcessor.VariableType.Auto);
-					receiveMethodDef.instructions.AddInstruction($"this.SendRaw({signalType}, signalResponse, {serialization.CreateNetworkSerializationMethodSignature()});");
+					receiveMethodDef.instructions.AddInstruction($"SendPacket(responsePacket);");
 				}
 				else
 				{
@@ -314,7 +301,7 @@ namespace NetworkScopes
 
 			// create writer variable
 			//			fakeMethodDef.instructions.AddVariableInstruction("writer", NetworkReflector.writerType, NetworkReflector.writerCtor);
-			fakeMethodDef.instructions.AddInstruction("NetOutgoingMessage writer = _netSender.CreateWriter({0});", remoteMethod.Name.GetConsistentHashCode());
+			fakeMethodDef.instructions.AddInstruction("OutgoingNetworkPacket packet = _netSender.CreatePacket({0});", remoteMethod.Name.GetConsistentHashCode());
 
 			ParameterInfo[] paramInfos = remoteMethod.GetParameters();
 
@@ -328,7 +315,7 @@ namespace NetworkScopes
 			}
 
 			// send it out
-			fakeMethodDef.instructions.AddInstruction("_netSender.PrepareAndSendWriter(writer);");
+			fakeMethodDef.instructions.AddInstruction("_netSender.SendPacket(packet);");
 
 			// if remote method has a return type, it's a two-way signal that can be awaited
 			bool isTwoWaySignal = remoteMethod.ReturnType != typeof(void);
@@ -356,215 +343,35 @@ namespace NetworkScopes
 			return fakeMethodDef;
 		}
 
+		private void VerifySerializationExists(Type type)
+		{
+			if (!type.CanSerializeAtRuntime())
+				NetworkDebug.LogWarning($"NetworkScopes can not serialize the type <color=orange>{type.Name}</color>. Consider implementing the <color=white>ISerializable</color> interface, or using the <color=white>[ProtoContract]</color> and <color=white>[ProtoMember]</color> attributes to serialize it using Protobuf.");
+		}
+
 		private bool AddSerializeCode(MethodDefinition method, string paramName, Type paramType)
 		{
-			Type elementType = paramType;
+			method.Import(paramType);
 
-			if (elementType.IsEnum)
-				elementType = Enum.GetUnderlyingType(elementType);
+			VerifySerializationExists(paramType);
 
-			// get a method out of NetworkWriter that can serialize the parameter type
-			MethodInfo writerMethod = NetworkScopeUtility.GetNetworkWriterSerializer(elementType);
+			// write parameter
+			method.instructions.AddInstruction(SerializationUtility.MakeWriteStatement(paramName, "packet", paramType));
 
-			// if this type is an array, do some array magic
-			if (elementType.IsArray)
-			{
-				// write array count
-				method.instructions.AddInstruction("writer.Write({0}.Length);", paramName);
-				string arrCounterName = "_arrCounter";
-				method.instructions.AddInstruction("for (int {0} = 0; {0} < {1}.Length; {0}++)", arrCounterName, paramName);
-
-				return AddSerializeCode(method, string.Format("{0}[{1}]", paramName, arrCounterName), elementType.GetElementType());
-			}
-
-			// write out the NetworkWriter serializer call
-			if (writerMethod != null)
-			{
-				if (elementType != paramType)
-					method.instructions.AddMethodCall("writer", writerMethod, string.Format("({0}){1}", elementType, paramName));
-				else
-					method.instructions.AddMethodCall("writer", writerMethod, paramName);
-				return true;
-			}
-
-			// if type can't be serialized by NetworkWriter directly, see if the type has a serializer/deserializer method
-			ObjectSerialization objectSerialization = ObjectSerialization.FromType(elementType, false);
-			if (objectSerialization != null)
-				writerMethod = objectSerialization.serializeMethod;
-
-			if (writerMethod != null)
-			{
-				// call the static NetworkSerialize method
-				method.instructions.AddMethodCall(elementType.Name, writerMethod, paramName, "writer");
-				return true;
-			}
-
-			// attempt to create static serializer if attributed with NetworkSerialization
-			ClassDefinition autoGeneratedSerializer = CreateStaticSerializerClass(paramType);
-			if (autoGeneratedSerializer != null)
-			{
-				method.instructions.AddInstruction("Serializers.{0}.NetworkSerialize({1}, writer);", autoGeneratedSerializer.Name, paramName);
-
-				return true;
-			}
-
-			// can't find serializer? exit out
-			NetworkDebug.LogWarningFormat("Could not find a serializer for the type '{0}'", elementType.FullName);
-
-			return false;
+			return true;
 		}
 
 		// when localMethod is null, it means serialization is happening within a custom-serialized class
 		private bool AddDeserializeCode(MethodDefinition method, string paramName, Type paramType, MethodInfo localMethod)
 		{
-			Type elementType = paramType;
+			method.Import(paramType);
 
-			if (elementType.IsEnum)
-				elementType = Enum.GetUnderlyingType(elementType);
+			VerifySerializationExists(paramType);
 
-			// get a method out of NetworkWriter that can serialize the parameter type
-			MethodInfo typeDeserializer = NetworkScopeUtility.GetNetworkReaderDeserializer(elementType);
+			// read parameter
+			method.instructions.AddInstruction(SerializationUtility.MakeReadAndAssignStatement(paramName, "packet", paramType));
 
-			// if this type is an array, do some array magic
-			if (elementType.IsArray)
-			{
-				string arrCount = string.Format("{0}_count", paramName);
-				string arrIndex = string.Format("{0}_index", paramName);
-
-				// read count
-				method.instructions.AddInstruction("Int32 {0} = reader.ReadInt32();", arrCount);
-
-				// define variable if deserializing local method
-				if (localMethod != null)
-					method.instructions.AddInstruction("{0}[] {1} = new {0}[{2}];", elementType.GetElementType(), paramName, arrCount);
-
-				method.instructions.AddInstruction("for (int {0} = 0; {0} < {1}; {0}++)", arrIndex, arrCount);
-				method.instructions.AddInstruction("{");
-
-				Type arrayElemType = elementType.GetElementType();
-				if (!arrayElemType.IsValueType)
-				{
-					method.instructions.AddInstruction("{2}[{0}] = new {1}();", arrIndex, arrayElemType, paramName);
-				}
-
-				bool didSerialize = AddDeserializeCode(method, string.Format("{0}[{1}]", paramName, arrIndex), elementType.GetElementType(), null);
-				method.instructions.AddInstruction("}");
-
-				return didSerialize;
-			}
-
-			// write out the NetworkWriter serializer call
-			if (typeDeserializer != null)
-			{
-				// create new variable if specified
-				//				string createVarModifier = (localMethod != null) ? string.Format("{0} ", paramType) : string.Empty;
-				bool cast = paramType != elementType;
-
-				// call the reader function and assign the value
-				method.instructions.AddMethodCallWithAssignment(paramName, paramType, "reader", cast, typeDeserializer, localMethod != null);
-
-				return true;
-			}
-
-			// if type can't be serialized by NetworkWriter directly, see if the type has a serializer/deserializer method
-			ObjectSerialization objectSerialization = ObjectSerialization.FromType(elementType, false);
-			if (objectSerialization != null)
-				typeDeserializer = objectSerialization.deserializeMethod;
-
-			// define variable if we're in the local scope
-			if (localMethod != null)
-				method.instructions.AddInstruction("{0} {1} = new {0}();", elementType, paramName);
-
-			if (typeDeserializer != null)
-			{
-				// call the static NetworkSerialize method
-				method.instructions.AddMethodCall(elementType.Name, typeDeserializer, paramName, "reader");
-				return true;
-			}
-
-			// attempt to create static serializer if attributed with NetworkSerialization
-			ClassDefinition autoGeneratedSerializer = CreateStaticSerializerClass(paramType);
-			if (autoGeneratedSerializer != null)
-			{
-				method.instructions.AddInstruction("Serializers.{0}.NetworkDeserialize({1}, reader);", autoGeneratedSerializer.Name, paramName);
-
-				return true;
-			}
-
-			// can't find serializer? exit out
-			NetworkDebug.LogWarningFormat("Could not find a deserializer for the type '{0}'", elementType.FullName);
-
-			return false;
-		}
-
-		private ClassDefinition CreateStaticSerializerClass(Type paramType)
-		{
-			string serializerClassName = string.Format("{0}Serializer", paramType.Name.Replace(".", string.Empty));
-
-			// see if it exists in the serializer class
-			ClassDefinition serializerClassDef = NetworkScopeUtility.SerializerClass.classes.Find(cd => cd.Name == serializerClassName);
-
-			if (serializerClassDef != null)
-				return serializerClassDef;
-
-			NetworkSerialization serializationAttr = null;
-			if (serializerClassDef == null && (serializationAttr = ReflectionUtility.GetAttribute<NetworkSerialization>(paramType)) != null)
-			{
-				// create and add the serializer class for this type
-				serializerClassDef = new ClassDefinition(serializerClassName);
-				serializerClassDef.IsStatic = true;
-				NetworkScopeUtility.SerializerClass.classes.Add(serializerClassDef);
-
-				// serializer method
-				{
-					MethodDefinition serializerMethod = new MethodDefinition("NetworkSerialize");
-					serializerMethod.IsStatic = true;
-					serializerMethod.parameters.Add(new ParameterDefinition("value", paramType));
-					serializerMethod.parameters.Add(new ParameterDefinition("writer", typeof(NetOutgoingMessage)));
-
-					serializerClassDef.methods.Add(serializerMethod);
-
-					FieldInfo[] serializeFields;
-					PropertyInfo[] serializeProps;
-					serializationAttr.GetSerializedMembers(paramType, out serializeFields, out serializeProps);
-
-
-					if (serializeFields != null)
-						foreach (FieldInfo field in serializeFields)
-							if (!field.Name.EndsWith("k__BackingField"))        // ignore property backing fields
-								AddSerializeCode(serializerMethod, string.Format("value.{0}", field.Name), field.FieldType);
-					if (serializeProps != null)
-						foreach (PropertyInfo prop in serializeProps)
-							AddSerializeCode(serializerMethod, string.Format("value.{0}", prop.Name), prop.PropertyType);
-				}
-
-				// deserializer method
-				{
-					MethodDefinition serializerMethod = new MethodDefinition("NetworkDeserialize");
-					serializerMethod.IsStatic = true;
-					serializerMethod.parameters.Add(new ParameterDefinition("value", paramType));
-					serializerMethod.parameters.Add(new ParameterDefinition("reader", typeof(NetIncomingMessage)));
-
-					serializerClassDef.methods.Add(serializerMethod);
-
-					FieldInfo[] serializeFields;
-					PropertyInfo[] serializeProps;
-					serializationAttr.GetSerializedMembers(paramType, out serializeFields, out serializeProps);
-
-
-					if (serializeFields != null)
-						foreach (FieldInfo field in serializeFields)
-							if (!field.Name.EndsWith("k__BackingField"))        // ignore property backing fields
-								AddDeserializeCode(serializerMethod, string.Format("value.{0}", field.Name), field.FieldType, null);
-					if (serializeProps != null)
-						foreach (PropertyInfo prop in serializeProps)
-							AddDeserializeCode(serializerMethod, string.Format("value.{0}", prop.Name), prop.PropertyType, null);
-				}
-
-				return serializerClassDef;
-			}
-
-			return null;
+			return true;
 		}
 	}
 }

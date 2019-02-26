@@ -1,0 +1,14 @@
+
+Features:
+- [Done] Warn when class is not serializable (check ProtoContract and ISerializable).
+- [Done] Allow serialization of any type by adding [ProtoContract] on your class, and [ProtoMember] on the members you want to serialize.
+- [Done] Allow serialization by implementing the ISerializable interface (in the NetworkScopes namespace).
+
+Issues:
+- Use ISerializable to make Maybe<T1,T2> function properly.
+
+Removed Features:
+- Authentication.
+- NetworkObject and children.
+- NetworkList<T> works the same as List<T>, and notifies remote machines on the same scope about any modifications to the list (add, remove, clear).
+- [ClientScope] Signal queueing

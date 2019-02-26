@@ -1,5 +1,5 @@
 ﻿
-//#define NS_DEBUG_SCOPE_ACTIVITY
+#define NS_DEBUG_SCOPE_ACTIVITY
 
 using Lidgren.Network;
 
@@ -56,10 +56,6 @@ namespace NetworkScopes
 #if UNITY_EDITOR && SCOPE_DEBUGGING
 			ScopeDebugger.AddScopeEvent(this, null, ScopeDebugger.ScopeEvent.Type.Enter);
 #endif
-
-			IScope sc = this;
-			sc.ReadNetworkVariables(netVariableData);
-
 			OnEnterScope();
 
 			OnEnterScopeEvent();

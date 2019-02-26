@@ -196,7 +196,7 @@ namespace NetworkScopes
 			IsTargetGroup = true;
 		}
 
-		public void ProcessPeerSignal(NetIncomingMessage msg, TPeer sender)
+		public void ProcessPeerSignal(IncomingNetworkPacket packet, TPeer sender)
 		{
 			// ignore messages from unregistered users
 			if (!Peers.Contains(sender))
@@ -209,7 +209,7 @@ namespace NetworkScopes
 			SetTargetPeer(sender);
 
 			// process the message
-			ProcessSignal(msg);
+			ProcessSignal(packet);
 		}
 	}
 }

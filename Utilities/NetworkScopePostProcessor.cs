@@ -53,9 +53,9 @@ public static class NetworkScopePostProcessor
 				{
 					if (t.BaseType == typeof(MasterClient))
 						AuthenticationProcessor.ProcessClient(t);
-					if (t.BaseType.IsGenericType &&
-					    t.BaseType.GetGenericTypeDefinition() == typeof(MasterServer<>))
-						AuthenticationProcessor.ProcessServer(t);
+//					if (t.BaseType.IsGenericType &&
+//					    t.BaseType.GetGenericTypeDefinition() == typeof(MasterServer<>))
+//						AuthenticationProcessor.ProcessServer(t);
 				}
 			}
 		}

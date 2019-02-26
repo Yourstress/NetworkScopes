@@ -42,8 +42,5 @@ namespace NetworkScopes
 			Log($"[Exception] {exception.Message}");
 		}
 	}
-
-	#if UNITY_2017_1_OR_NEWER
-#endif
 }
 #endif

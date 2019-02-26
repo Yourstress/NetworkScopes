@@ -13,6 +13,8 @@ namespace NetworkScopes
 		private NetClient _client;
 		private LidgrenMessageReceiver _receiver;
 
+		public NetClient client => _client;
+
 		public bool enableLogging = false;
 
 		/// <summary>
@@ -266,7 +268,7 @@ namespace NetworkScopes
 			BaseClientScope targetScope;
 			if (activeScopes.TryGetValue(msgType, out targetScope))
 			{
-				targetScope.ProcessSignal(msg);
+				targetScope.ProcessSignal(NetworkPacket.FromMessage(msg));
 			}
 			else
 			{

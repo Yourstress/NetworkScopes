@@ -1,7 +1,4 @@
 ﻿
-using Lidgren.Network;
-
-
 namespace NetworkScopes
 {
 	using System;
@@ -77,41 +74,43 @@ namespace NetworkScopes
 
 			void RegisterNetworkObjects(Type scopeType, MethodInfo[] methods)
 			{
-				FieldInfo[] netObjFields = NetworkVariableProcessor.GetNetworkVariableFields(scopeType, false).ToArray();
-
-				foreach (FieldInfo field in netObjFields)
-				{
-					// find receiving method for the given NetworkObject typed field
-					MethodInfo recvMethod = methods.FirstOrDefault(m => m.IsPublic && m.Name == NetworkScopeUtility.MakeNetObjRecvMethodName(field.Name));
-
-					// if no method was found, then don't create the delegate
-					if (recvMethod == null)
-						continue;
-						
-					Add(field.Name.GetConsistentHashCode(), recvMethod);
-				}
+				// TODO: register network objects
+//				FieldInfo[] netObjFields = NetworkVariableProcessor.GetNetworkVariableFields(scopeType, false).ToArray();
+//
+//				foreach (FieldInfo field in netObjFields)
+//				{
+//					// find receiving method for the given NetworkObject typed field
+//					MethodInfo recvMethod = methods.FirstOrDefault(m => m.IsPublic && m.Name == NetworkScopeUtility.MakeNetObjRecvMethodName(field.Name));
+//
+//					// if no method was found, then don't create the delegate
+//					if (recvMethod == null)
+//						continue;
+//
+//					Add(field.Name.GetConsistentHashCode(), recvMethod);
+//				}
 			}
 
 			void RegisterEvents(Type scopeType, MethodInfo[] methods)
 			{
-				FieldInfo[] eventFields = scopeType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(f =>
-				{
-					return NetworkEventUtility.IsEventType(f.FieldType.Name);
-				}).ToArray();
-
-				foreach (FieldInfo field in eventFields)
-				{
-					MethodInfo recvMethod = methods.FirstOrDefault(m => m.Name == string.Format("Receive_{0}", field.Name));
-
-					// if no method was found, don't create the delegate
-					if (recvMethod == null)
-					{
-						NetworkDebug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, scopeType.Name);
-						continue;
-					}
-
-					Add(field.Name.GetConsistentHashCode(), recvMethod);
-				}
+				// TODO: register network events
+//				FieldInfo[] eventFields = scopeType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly).Where(f =>
+//				{
+//					return NetworkEventUtility.IsEventType(f.FieldType.Name);
+//				}).ToArray();
+//
+//				foreach (FieldInfo field in eventFields)
+//				{
+//					MethodInfo recvMethod = methods.FirstOrDefault(m => m.Name == string.Format("Receive_{0}", field.Name));
+//
+//					// if no method was found, don't create the delegate
+//					if (recvMethod == null)
+//					{
+//						NetworkDebug.LogFormat("Network Scope: Skipping method {0} in {1} because no \"Receive_{0}\" function was found. The type is probably missing the [ClientSignalSync(typeof(SERVER_TYPE))] or [ServerSignalSync(typeof(CLIENT_TYPE))] attribute", field.Name, scopeType.Name);
+//						continue;
+//					}
+//
+//					Add(field.Name.GetConsistentHashCode(), recvMethod);
+//				}
 			}
 		}
 
@@ -125,24 +124,25 @@ namespace NetworkScopes
 			}
 		}
 
-		public static SignalInvocation GetMessageInvocation(Type scopeType, NetIncomingMessage reader)
+		public static SignalInvocation GetMessageInvocation(Type scopeType, IncomingNetworkPacket packet)
 		{
-			int signalType = reader.ReadInt32();
+			int signalType = packet.ReadInt();
 
 			// create a new invocation object and assign its method and reader parameter
 			SignalInvocation invocation = new SignalInvocation();
 			invocation.method = GetMethod(scopeType, signalType);
-			invocation.parameters = new object[] { reader };
+			invocation.parameters = new object[] { packet };
 
 			return invocation;
 		}
 
-		public static void Invoke(object rootObject, Type scopeType, NetIncomingMessage reader)
+		public static void Invoke(object rootObject, Type scopeType, IncomingNetworkPacket packet)
 		{
-			int signalType = reader.ReadInt32();
+			int signalType = packet.ReadInt();
+
 			MethodInfo method = GetMethod(scopeType, signalType);
 
-			SignalInvocation.Invoke(rootObject, method, new object[] { reader });
+			SignalInvocation.Invoke(rootObject, method, new object[] { packet });
 		}
 
 		private static MethodInfo GetMethod(Type scopeType, int signalType)

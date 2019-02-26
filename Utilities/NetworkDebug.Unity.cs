@@ -27,7 +27,6 @@ namespace NetworkScopes
 			Debug.LogErrorFormat(str, args);
 		}
 
-
 		public static void LogError(string s)
 		{
 			Debug.LogError(s);

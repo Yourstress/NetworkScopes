@@ -30,14 +30,14 @@ namespace NetworkScopes
 			return responseTasks;
 		}
 
-		public void DequeueResponseObject<T>(TPeer peer, int signalType, NetIncomingMessage reader, Action<T, NetIncomingMessage> serializeMethod) where T : new()
+		public void DequeueResponseObject<T>(TPeer peer, int signalType, NetIncomingMessage reader) where T : new()
 		{
-			GetPeerResponseTasks(peer).DequeueResponseObject(signalType, reader, serializeMethod);
+			GetPeerResponseTasks(peer).DequeueResponse(signalType, reader);
 		}
 
-		public void DequeueResponseValue<T>(TPeer peer, int signalType, NetIncomingMessage reader, Func<NetIncomingMessage, T> deserializeMethod)
+		public void DequeueResponseValue<T>(TPeer peer, int signalType, NetIncomingMessage reader)
 		{
-			GetPeerResponseTasks(peer).DequeueResponseValue(signalType, reader, deserializeMethod);
+			GetPeerResponseTasks(peer).DequeueResponse(signalType, reader);
 		}
 	}
 
@@ -60,26 +60,11 @@ namespace NetworkScopes
 			return task;
 		}
 
-		private void DequeueResponseTask<T>(int signalType, T value)
+		public void DequeueResponse<T>(int signalType, T value)
 		{
 			Queue<NetworkTask> networkTasks = tasks[signalType];
 			NetworkTask<T> task = (NetworkTask<T>)networkTasks.Dequeue();
 			task.OnCompleted(value);
-		}
-
-		public void DequeueResponseObject<T>(int signalType, NetIncomingMessage reader, Action<T,NetIncomingMessage> serializeMethod) where T : new()
-		{
-			T value = new T();
-			serializeMethod(value, reader);
-
-			DequeueResponseTask(signalType, value);
-		}
-
-		public void DequeueResponseValue<T>(int signalType, NetIncomingMessage reader, Func<NetIncomingMessage,T> deserializeMethod)
-		{
-			T value = deserializeMethod(reader);
-
-			DequeueResponseTask(signalType, value);
 		}
 	}
 }

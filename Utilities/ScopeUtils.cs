@@ -45,6 +45,7 @@ namespace NetworkScopes
 
 	public static class ScopeUtils
 	{
+		// used for sending enter/exit scope and other non-Signal messages.
 		public static void SendRawMessage(NetOutgoingMessage msg, NetworkPeer peer)
 		{
 			if (!peer.isConnected)
@@ -53,12 +54,25 @@ namespace NetworkScopes
 			peer.connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 		}
 
-		public static void SendRawMessage<TPeer>(NetOutgoingMessage msg, IEnumerable<TPeer> peers, NetServer masterNetServer) where TPeer : NetworkPeer
+		public static void SendPacket(NetworkPacket packet, NetworkPeer peer)
+		{
+			if (!peer.isConnected)
+				return;
+
+			NetOutgoingMessage msg = packet.CreateOutgoingMessage(peer.connection.m_peer);
+			peer.connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+		}
+
+		public static void SendPacket<TPeer>(NetworkPacket packet, IEnumerable<TPeer> peers, NetServer masterNetServer) where TPeer : NetworkPeer
 		{
 			List<NetConnection> connectionList = NetConnectionListPool.GetConnectionList(peers).ToList();
 
 			if (connectionList.Count > 0)
+			{
+				NetOutgoingMessage msg = packet.CreateOutgoingMessage(connectionList[0].m_peer);
 				masterNetServer.SendMessage(msg, connectionList, NetDeliveryMethod.ReliableOrdered, 0);
+			}
+
 			NetConnectionListPool.PoolConnectionList(connectionList);
 		}
 
@@ -98,8 +112,8 @@ namespace NetworkScopes
 			// 3. scopeIdentifier: The value which identifier the counterpart (new) client scope
 			msg.Write(newScope.scopeIdentifier);
 
-			// 4. NetworkVariables: write any NetworkObject/NetworkValue objects registered on the newly joined scope
-			newScope.WriteNetworkVariables(msg);
+			// 4. TODO: NetworkVariables: write any NetworkObject/NetworkValue objects registered on the newly joined scope
+//			newScope.WriteNetworkVariables(msg);
 
 			SendRawMessage(msg, peer);
 		}
@@ -116,8 +130,8 @@ namespace NetworkScopes
 			// 2. msgType: Determines which channel to communicate on
 			msg.Write(scope.scopeIdentifier);
 
-			// 3. NetworkVariables: write any NetworkObject/NetworkValue objects registered on the newly joined scope
-			scope.WriteNetworkVariables(msg);
+			// 3. TODO: NetworkVariables: write any NetworkObject/NetworkValue objects registered on the newly joined scope
+//			scope.WriteNetworkVariables(msg);
 
 			SendRawMessage(msg, peer);
 		}
