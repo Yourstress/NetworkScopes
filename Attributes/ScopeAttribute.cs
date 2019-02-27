@@ -265,6 +265,8 @@ namespace NetworkScopes
 
 					SignalResponseData signalResponseData = new SignalResponseData(localMethod);
 
+					VerifySerializationExists(signalResponseData.responseType);
+
 					signalResponseData.ImportTypesInto(receiveMethodDef);
 
 					if (signalResponseData.isTask)
@@ -343,10 +345,21 @@ namespace NetworkScopes
 			return fakeMethodDef;
 		}
 
-		private void VerifySerializationExists(Type type)
+		private static void VerifySerializationExists(Type type)
 		{
 			if (!type.CanSerializeAtRuntime())
 				NetworkDebug.LogWarning($"NetworkScopes can not serialize the type <color=orange>{type.Name}</color>. Consider implementing the <color=white>ISerializable</color> interface, or using the <color=white>[ProtoContract]</color> and <color=white>[ProtoMember]</color> attributes to serialize it using Protobuf.");
+
+			if (type.IsGenericType)
+			{
+				foreach (Type genericArgument in type.GetGenericArguments())
+				{
+					if (genericArgument == type)
+						continue;
+
+					VerifySerializationExists(genericArgument);
+				}
+			}
 		}
 
 		private bool AddSerializeCode(MethodDefinition method, string paramName, Type paramType)
