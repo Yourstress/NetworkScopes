@@ -1,11 +1,6 @@
 
 Features:
-- [Done] Warn when class is not serializable (check ProtoContract and ISerializable).
-- [Done] Allow serialization of any type by adding [ProtoContract] on your class, and [ProtoMember] on the members you want to serialize.
-- [Done] Allow serialization by implementing the ISerializable interface (in the NetworkScopes namespace).
-
-Issues:
-- Use ISerializable to make Maybe<T1,T2> function properly.
+- Serialization of native arrays, List<T> and Dictionary<T>.
 
 Removed Features:
 - Authentication.

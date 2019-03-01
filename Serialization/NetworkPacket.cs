@@ -27,6 +27,17 @@ namespace NetworkScopes
 			return Serializer.DeserializeWithLengthPrefix<T>(stream, PrefixStyle.Base128, nextProtobufFieldNumber++);
 		}
 
+		public T[] ReadArray<T>() where T : new()
+		{
+			int length = ReadInt();
+			T[] array = new T[length];
+
+			for (int x = 0; x < length; x++)
+				array[x] = ReadObject<T>();
+
+			return array;
+		}
+
 		public bool ReadBoolean()
 		{
 			return reader.ReadBoolean();
@@ -116,6 +127,14 @@ namespace NetworkScopes
 			// try to serialize it using ISerializable if found, else use Protobuf
 			if (!Serialization.TrySerialize(obj, this))
 				Serializer.SerializeWithLengthPrefix(stream, obj, PrefixStyle.Base128, nextProtobufFieldNumber++);
+		}
+
+		public void WriteArray<T>(T[] array)
+		{
+			Write(array.Length);
+
+			for (int x = 0; x < array.Length; x++)
+				WriteObject<T>(array[x]);
 		}
 
 		public void Write(bool value)

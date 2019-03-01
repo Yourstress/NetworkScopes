@@ -21,7 +21,10 @@ namespace NetworkScopes
 			if (readMethod != null)
 				return readMethod.Name;
 
-			// if not found, read it with protobuf
+			// if not found, read it with protobuf or ISerializable
+			if (type.IsArray)
+				return $"ReadArray<{type.GetElementType().GetTypeName()}>";
+
 			return $"ReadObject<{type.GetTypeName()}>";
 		}
 
@@ -45,7 +48,10 @@ namespace NetworkScopes
 			if (writeMethod != null)
 				return writeMethod.Name;
 
-			// if not found, write it with protobuf
+			// if not found, write it with protobuf or ISerializable
+			if (type.IsArray)
+				return $"WriteArray<{type.GetElementType().GetTypeName()}>";
+
 			return $"WriteObject<{type.GetTypeName()}>";
 		}
 
@@ -75,6 +81,9 @@ namespace NetworkScopes
 
 		public static bool CanSerializeAtRuntime(this Type type)
 		{
+			if (type.IsArray)
+				type = type.GetElementType();
+
 			return CanSerializeUsingISerializable(type) || CanSerializeUsingProtobuf(type);
 		}
 
