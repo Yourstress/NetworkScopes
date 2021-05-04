@@ -8,8 +8,6 @@ namespace NetworkScopes.CodeGeneration
 {
 	public static class SignalUtility
 	{
-		private static CSharpCodeProvider provider;
-
 		public static string GetReadableName(this Type type)
 		{
 			return GetReadableTypeName(type.Name);

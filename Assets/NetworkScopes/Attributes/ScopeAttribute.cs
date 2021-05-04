@@ -35,6 +35,6 @@ namespace NetworkScopes
 
 	public class ClientScopeAttribute : ScopeAttribute
 	{
-		public ClientScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.Event) : base(EntityType.Client, otherScope, defaultReceiveType) {}
+		public ClientScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod) : base(EntityType.Client, otherScope, defaultReceiveType) {}
 	}
 }

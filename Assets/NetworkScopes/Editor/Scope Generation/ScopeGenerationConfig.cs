@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using UnityEditor;
 
 namespace NetworkScopes.CodeGeneration
@@ -11,3 +13,5 @@ namespace NetworkScopes.CodeGeneration
 		}
 	}
 }
+
+#endif

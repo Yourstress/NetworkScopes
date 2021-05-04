@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace NetworkScopes
 {
@@ -20,7 +19,7 @@ namespace NetworkScopes
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel currentChannel { get; private set; }
 
-		private NetworkPromiseHandler promiseHandler = new NetworkPromiseHandler();
+		private readonly NetworkPromiseHandler promiseHandler = new NetworkPromiseHandler();
 
 		void IClientScope.Initialize(IClientSignalProvider serviceProvider, ScopeIdentifier scopeIdentifier)
 		{
@@ -35,14 +34,14 @@ namespace NetworkScopes
 		{
 			// return writer based on the current network medium (service provider)
 			ISignalWriter signal = _signalProvider.CreateSignal(currentChannel);
-			signal.WriteInt32(signalID);
+			signal.Write(signalID);
 			return signal;
 		}
 
 		protected ISignalWriter CreatePromiseSignal(int signalID, INetworkPromise promise)
 		{
 			ISignalWriter signal = CreateSignal(signalID);
-			signal.WriteInt32(promiseHandler.EnqueuePromise(promise));
+			signal.Write(promiseHandler.EnqueuePromise(promise));
 			return signal;
 		}
 

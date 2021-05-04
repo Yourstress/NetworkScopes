@@ -1,5 +1,4 @@
 using System;
-using UnityEditor;
 
 namespace NetworkScopes
 {
@@ -37,7 +36,7 @@ namespace NetworkScopes
 
 		public override string ToString()
 		{
-			return string.Format("[Channel {0}]", _value);
+			return $"[Channel {_value}]";
 		}
 	}
 }

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine;
+#endif
 
 namespace NetworkScopes.CodeGeneration
 {
@@ -107,7 +109,7 @@ namespace NetworkScopes.CodeGeneration
 				if (!isPromiseSender)
 				{
 					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
-						string.Format("CreateSignal({0} /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
+						string.Format("CreateSignal({0} /*hash '{1}'*/)", method.Name.GetConsistentHashCode(), method.Name));
 				}
 				// create promise command
 				else
@@ -120,7 +122,7 @@ namespace NetworkScopes.CodeGeneration
 
 					// then call CreatePromiseSignal
 					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
-						string.Format("CreatePromiseSignal({0}, promise /*hash '{1}'*/)", method.Name.GetHashCode(), method.Name));
+						string.Format("CreatePromiseSignal({0}, promise /*hash '{1}'*/)", method.Name.GetConsistentHashCode(), method.Name));
 
 					// finally, make sure the method returns a promise type
 					senderMethod.ReturnType = promiseType;
@@ -247,7 +249,7 @@ namespace NetworkScopes.CodeGeneration
 
 				string receiveHashName = "#" + method.Name;
 				body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
-					string.Format("CreateSignal({0} /*hash '{1}'*/)", receiveHashName.GetHashCode(), receiveHashName));
+					string.Format("CreateSignal({0} /*hash '{1}'*/)", receiveHashName.GetConsistentHashCode(), receiveHashName));
 
 				serializer.AddSerializationCommands(body, "promiseID", typeof(int));
 				serializer.AddSerializationCommands(body, "promiseValue", method.ReturnType);
@@ -266,6 +268,7 @@ namespace NetworkScopes.CodeGeneration
 
 		public static string GetScopeRootPath(string scopeDefInterfaceName)
 		{
+			#if UNITY_EDITOR
 			string[] guids = AssetDatabase.FindAssets(string.Format("t:MonoScript {0}", scopeDefInterfaceName));
 
 			if (guids.Length == 0)
@@ -275,12 +278,26 @@ namespace NetworkScopes.CodeGeneration
 			string path = AssetDatabase.GUIDToAssetPath(guids[0]);
 
 			return Path.GetDirectoryName(path);
+			#else
+
+			string projectDirectory = Path.GetFullPath(@"../../../");
+
+			string fileName = $"{scopeDefInterfaceName}.cs";
+			string[] files = Directory.GetFiles(projectDirectory, fileName, SearchOption.AllDirectories);
+
+			if (files.Length != 1)
+				throw new Exception("Could not find a file by the name " + fileName);
+
+			return Directory.GetParent(files[0]).FullName;
+			#endif
+
 		}
 
 		public static string MakeScopeScriptPath(string scopeName, string interfaceName)
 		{
-			string path = GetScopeRootPath(interfaceName);
-			return Path.Combine(path, string.Format("{0}.cs", scopeName));
+			string path = Path.Combine(GetScopeRootPath(interfaceName), "Generated");
+			Directory.CreateDirectory(path);
+			return Path.Combine(path, $"{scopeName}.cs");
 		}
 
 		public string GetScopeScriptPath()

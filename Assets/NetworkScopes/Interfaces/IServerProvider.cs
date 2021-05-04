@@ -1,3 +1,4 @@
+
 namespace NetworkScopes
 {
 	public interface IServerProvider

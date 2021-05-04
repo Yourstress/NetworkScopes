@@ -19,7 +19,7 @@ namespace NetworkScopes.Utilities
 		{
 			ISignalWriter signalWriter = signalProvider.CreateSignal(ScopeChannel.SystemChannel);
 
-			signalWriter.WriteByte(SystemMessage.EnterScope);
+			signalWriter.Write(SystemMessage.EnterScope);
 			signalWriter.WriteScopeIdentifier(scope.scopeIdentifier);
 			signalWriter.WriteScopeChannel(scope.currentChannel);
 
@@ -30,8 +30,8 @@ namespace NetworkScopes.Utilities
 		{
 			ISignalWriter signalWriter = signalProvider.CreateSignal(ScopeChannel.SystemChannel);
 
-			signalWriter.WriteByte(SystemMessage.ExitScope);
-			signalWriter.WriteShort(scope.currentChannel);
+			signalWriter.Write(SystemMessage.ExitScope);
+			signalWriter.Write(scope.currentChannel);
 
 			peer.SendSignal(signalWriter);
 		}

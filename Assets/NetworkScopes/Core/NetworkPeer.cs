@@ -1,6 +1,6 @@
 using System;
 
-namespace NetworkScopes.ServiceProviders.Lidgren
+namespace NetworkScopes.ServiceProviders
 {
 	public abstract class NetworkPeer : INetworkPeer
 	{
@@ -15,6 +15,13 @@ namespace NetworkScopes.ServiceProviders.Lidgren
 			isDestroyed = true;
 
 			OnDisconnect(this);
+			
+			Cleanup();
+		}
+
+		protected virtual void Cleanup()
+		{
+			
 		}
 
 		public abstract void SendSignal(ISignalWriter signal);

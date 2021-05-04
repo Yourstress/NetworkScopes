@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace NetworkScopes.CodeGeneration
@@ -52,13 +53,16 @@ namespace NetworkScopes.CodeGeneration
 			return writer;
 		}
 
-		private void Write(ScriptWriter writer)
+		private void Write(ScriptWriter writer, bool writeImports = true)
 		{
 			if (isCommentedOut)
 				writer.WriteFullLine("/*");
 
-			CollectAndWriteImports(writer);
-			writer.NewLine();
+			if (writeImports)
+			{
+				CollectAndWriteImports(writer);
+				writer.NewLine();
+			}
 
 			// write namespace
 			bool hasNamespace = !string.IsNullOrEmpty(type.Namespace);
@@ -125,7 +129,7 @@ namespace NetworkScopes.CodeGeneration
 
 			// write nested classes
 			for (var x = 0; x < nestedClasses.Count; x++)
-				nestedClasses[x].Write(writer);
+				nestedClasses[x].Write(writer, false);
 			if (nestedClasses.Count > 0)
 				writer.NewLine();
 
@@ -182,12 +186,19 @@ namespace NetworkScopes.CodeGeneration
 			{
 				if (method.Body != null && method.Body.imports != null)
 					CollectImports(method.Body.imports);
+				
+				// as well as method parameters
+				foreach (ParameterDefinition parameter in method.Parameters)
+				{
+					if (!string.IsNullOrEmpty(parameter.type.Namespace))
+						imports.Add(parameter.type.Namespace);
+				}
 			}
 
 			// write them to the script writer
 			foreach (string import in imports)
 			{
-				if (!string.IsNullOrEmpty(import))
+				if (!string.IsNullOrEmpty(import) && import != nameof(NetworkScopes))
 					writer.WriteFullLineFormat("using {0};", import);
 			}
 		}

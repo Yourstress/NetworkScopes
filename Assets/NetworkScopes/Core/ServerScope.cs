@@ -146,14 +146,14 @@ namespace NetworkScopes
 		{
 			// return writer based on the current network medium (service provider)
 			ISignalWriter signal = _signalProvider.CreateSignal(currentChannel);
-			signal.WriteInt32(signalID);
+			signal.Write(signalID);
 			return signal;
 		}
 
 		protected ISignalWriter CreatePromiseSignal(int signalID, INetworkPromise promise)
 		{
 			ISignalWriter signal = CreateSignal(signalID);
-			signal.WriteInt32(GetPromiseHandler(SenderPeer).EnqueuePromise(promise));
+			signal.Write(GetPromiseHandler(SenderPeer).EnqueuePromise(promise));
 			return signal;
 		}
 

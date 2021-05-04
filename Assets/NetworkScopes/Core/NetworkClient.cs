@@ -1,29 +1,48 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using NetworkScopes.ServiceProviders.Lidgren;
+using NetworkScopes.ServiceProviders.LiteNetLib;
 using NetworkScopes.Utilities;
-using UnityEngine;
 
 namespace NetworkScopes
 {
+	public enum NetworkState
+	{
+		Offline,
+		Connecting,
+		Connected,
+	}
 	public abstract class NetworkClient : IClientProvider, IClientSignalProvider
 	{
+		private readonly Dictionary<ScopeIdentifier,IClientScope> inactiveScopes = new Dictionary<ScopeIdentifier, IClientScope>();
+		private readonly Dictionary<ScopeChannel,IClientScope> activeScopes = new Dictionary<ScopeChannel, IClientScope>();
+		
 		// IClientProvider
-		public abstract bool IsConnecting { get; }
-		public abstract bool IsConnected { get; }
-		public abstract void Connect(string hostnameOrIP, int port);
-		public abstract void Disconnect();
+		public abstract bool IsConnecting { get; protected set; }
+		public abstract bool IsConnected { get; protected set; }
+		
+		public abstract int LatencyInMs { get; protected set; }
 
-		public abstract event Action OnConnected;
-		public abstract event Action OnDisconnected;
+		public NetworkState State => IsConnected ? NetworkState.Connected : IsConnecting ? NetworkState.Connecting : NetworkState.Offline;
+		
+		public event Action OnConnected = delegate {};
+		public event Action OnConnectFailed = delegate {};
+		public event Action<byte> OnDisconnected = delegate {};
+		public event Action<NetworkState> OnStateChanged = delegate {};
 
-		private Dictionary<ScopeIdentifier,IClientScope> inactiveScopes = new Dictionary<ScopeIdentifier, IClientScope>();
-		private Dictionary<ScopeChannel,IClientScope> activeScopes = new Dictionary<ScopeChannel, IClientScope>();
+		public bool enableLogging = true;
+		
+		protected abstract void ConnectInternal(string hostnameOrIP, int port);
+		protected abstract void DisconnectInternal();
 
 		// IClientSignalProvider
 		public abstract ISignalWriter CreateSignal(short scopeChannel);
 		public abstract void SendSignal(ISignalWriter signal);
+		
+		// Other
+		public bool AutoRetryFailedConnection = false;
+		
+		private string lastHost;
+		private int lastPort;
 
 		public TClientScope RegisterScope<TClientScope>(ScopeIdentifier scopeIdentifier) where TClientScope : IClientScope, new()
 		{
@@ -37,20 +56,19 @@ namespace NetworkScopes
 		protected void ProcessSignal(ISignalReader signal)
 		{
 			ScopeChannel targetChannel = signal.ReadScopeChannel();
-			IClientScope targetScope;
 
 			if (targetChannel == ScopeChannel.SystemChannel)
 			{
 				ProcessSystemSignal(signal);
 			}
 			// in order to receive a signal, the receiving scope must be active (got an Entered Scope system message).
-			else if (activeScopes.TryGetValue(targetChannel, out targetScope))
+			else if (activeScopes.TryGetValue(targetChannel, out IClientScope targetScope))
 			{
 				targetScope.ProcessSignal(signal);
 			}
 			else
 			{
-				Debug.LogWarningFormat("Client could not process signal on unknown channel {0}.", targetChannel);
+				Debug.LogWarning($"Client could not process signal on unknown channel {targetChannel}.");
 			}
 		}
 
@@ -68,8 +86,7 @@ namespace NetworkScopes
 					// this tells us which channel to bind this newly entered scope to
 					ScopeChannel channel = signal.ReadScopeChannel();
 
-					IClientScope targetScope;
-					if (inactiveScopes.TryGetValue(scopeID, out targetScope))
+					if (inactiveScopes.TryGetValue(scopeID, out IClientScope targetScope))
 					{
 						// move the scope to the actives list
 						inactiveScopes.Remove(scopeID);
@@ -79,7 +96,7 @@ namespace NetworkScopes
 					}
 					else
 					{
-						Debug.LogWarningFormat("Failed to enter scope. No client scope is registered with the identifier {0}.", scopeID);
+						Debug.LogWarning($"Failed to enter scope. No client scope is registered with the identifier {scopeID}.");
 					}
 					break;
 				}
@@ -89,8 +106,7 @@ namespace NetworkScopes
 					// this tells us which channel the target scope will be on
 					ScopeChannel channel = signal.ReadScopeChannel();
 
-					IClientScope targetScope;
-					if (activeScopes.TryGetValue(channel, out targetScope))
+					if (activeScopes.TryGetValue(channel, out IClientScope targetScope))
 					{
 						// move the scope back to the inactives list
 						activeScopes.Remove(channel);
@@ -100,11 +116,53 @@ namespace NetworkScopes
 					}
 					else
 					{
-						Debug.LogWarningFormat("Failed to exit scope. No client scope is registered on channel {0}.", channel);
+						Debug.LogWarning($"Failed to exit scope. No client scope is registered on channel {channel}.");
 					}
 					break;
 				}
 			}
+		}
+
+		public void Connect(string hostOrIP, int port)
+		{
+			lastHost = hostOrIP;
+			lastPort = port;
+			
+			if (enableLogging)
+				Debug.Log($"Client connecting to {hostOrIP}:{port}");
+			
+			// connect
+			ConnectInternal(hostOrIP, port);
+			
+			// update status
+			OnStateChanged(NetworkState.Connecting);
+		}
+
+		public void Disconnect()
+		{
+			if (enableLogging)
+				Debug.Log($"Disconnecting from {lastHost}:{lastPort}");
+			
+			WillDisconnect();
+			
+			DisconnectInternal();
+		}
+		
+		public void Reconnect()
+		{
+			if (string.IsNullOrEmpty(lastHost))
+				throw new Exception("Connect must be called first.");
+			
+			Connect(lastHost, lastPort);
+		}
+
+		protected void DidConnect()
+		{
+			IsConnected = true;
+			
+			// raise events
+			OnConnected();
+			OnStateChanged(State);
 		}
 
 		protected void WillDisconnect()
@@ -122,10 +180,39 @@ namespace NetworkScopes
 			activeScopes.Clear();
 		}
 
-		// Static factory methods
-		public static LidgrenClient CreateLidgrenClient()
+		protected void DidFailToConnect()
 		{
-			return new LidgrenClient();
+			IsConnecting = false;
+			
+			if (enableLogging)
+				Debug.Log($"[{GetType().Namespace}] Failed to connect to {lastHost}:{lastPort}");
+			
+			// raise events
+			OnConnectFailed();
+			OnStateChanged(State);
+			
+			OnConnectFailed();
+		}
+
+		protected void DidDisconnect(byte disconnectMsg)
+		{
+			IsConnecting = false;
+			IsConnected = false;
+			
+			if (enableLogging)
+				Debug.Log($"Disconnected from {lastHost}:{lastPort}");
+			
+			// raise events
+			OnDisconnected(disconnectMsg);
+			OnStateChanged(State);
+			
+			if (AutoRetryFailedConnection)
+				Reconnect();
+		}
+		
+		public static NetworkClient CreateLiteNetLibClient()
+		{
+			return new LiteNetClient();
 		}
 	}
 }

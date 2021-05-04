@@ -1,0 +1,13 @@
+{
+    "name": "com.diwaniyalabs.networkscopes.editor",
+    "references": [
+        "com.diwaniyalabs.networkscopes",
+        "com.diwaniyalabs.codegeneration"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}

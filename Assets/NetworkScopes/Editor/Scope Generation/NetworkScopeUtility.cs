@@ -1,9 +1,11 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
+
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine;
+#endif
 
 namespace NetworkScopes.CodeGeneration
 {
@@ -28,7 +30,7 @@ namespace NetworkScopes.CodeGeneration
 				// validate name
 				if (t.Name[0] != 'I')
 				{
-					Debug.LogErrorFormat("The scope definition <color=red>{0}</color> must be renamed to I{0}.", t.Name);
+					Debug.LogError($"The scope definition <color=red>{t.Name}</color> must be renamed to I{t.Name}.");
 					continue;
 				}
 

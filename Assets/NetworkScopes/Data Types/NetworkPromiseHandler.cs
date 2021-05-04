@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using NetworkScopes;
-using UnityEngine;
 
 public class NetworkPromiseHandler
 {
-    private Dictionary<int, INetworkPromise> pendingPromises = new Dictionary<int, INetworkPromise>();
+    private readonly Dictionary<int, INetworkPromise> pendingPromises = new Dictionary<int, INetworkPromise>();
 
     public int EnqueuePromise(INetworkPromise promise)
     {
@@ -15,13 +14,16 @@ public class NetworkPromiseHandler
 
     public void DequeueAndReceivePromise(int promiseID, ISignalReader reader)
     {
-        INetworkPromise promise;
-        if (!pendingPromises.TryGetValue(promiseID, out promise))
-            Debug.LogFormat("Could not call previously registered promise.");
-
-        promise.Receive(reader);
-
-        pendingPromises.Remove(promiseID);
+        if (pendingPromises.TryGetValue(promiseID, out INetworkPromise promise))
+        {
+            promise.Receive(reader);
+            
+            pendingPromises.Remove(promiseID);
+        }
+        else
+        {
+            Debug.Log($"Could not call previously registered promise with id {promiseID}.");
+        }
     }
 
     private int GenerateUniqueKey()

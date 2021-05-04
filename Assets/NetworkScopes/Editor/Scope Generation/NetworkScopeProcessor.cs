@@ -1,37 +1,37 @@
+
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEngine;
+#endif
 
 namespace NetworkScopes.CodeGeneration
 {
 	public class NetworkScopeProcessor
 	{
-//		[InitializeOnLoadMethod]
-//		public static void GenerateNetworkScopes()
-//		{
-//			ClearLog();
-//
-//			GenerateNetworkScopes(!ScopeGenerationConfig.AutoGenerateScopeClasses);
-//		}
-
 		public static void GenerateNetworkScopes(bool logOnly)
 		{
 			SerializationProvider serializer = new SerializationProvider();
 
 			List<ScopeDefinition> scopes = NetworkScopeUtility.FindScopeDefinitions(serializer);
+			
+			GenerateNetworkScopes(serializer, scopes, logOnly);
+		}
 
+		public static void GenerateNetworkScopes(SerializationProvider serializer, List<ScopeDefinition> scopes, bool logOnly)
+		{
 			// log types that failed to serialize within the previous block
 			foreach (KeyValuePair<Type, SerializationFailureReason> kvp in serializer.failedTypes)
 			{
 				switch (kvp.Value)
 				{
 					case SerializationFailureReason.TypeNotSerializable:
-						Debug.LogWarningFormat(
-							"The type <b>{0}</b> can not be serialized because it does not implement <b>ISerializable</b>. Use the <b>[NetworkSerialize]</b> to generate serialization code or implement <b>ISerializable</b> to manually serialize it.", kvp.Key.Name);
+						Debug.LogWarning(
+							$"The type <b>{kvp.Key.Name}</b> can not be serialized because it does not implement <b>ISerializable</b>. Use the <b>[NetworkSerialize]</b> to generate serialization code or implement <b>ISerializable</b> to manually serialize it.");
 						break;
 					default:
 						throw new ArgumentOutOfRangeException();
@@ -52,7 +52,9 @@ namespace NetworkScopes.CodeGeneration
 			{
 				serializer.GenerateTypeSerializers();
 
+				#if UNITY_EDITOR
 				AssetDatabase.Refresh();
+				#endif
 			}
 		}
 
@@ -105,7 +107,10 @@ namespace NetworkScopes.CodeGeneration
 				// write scope name first when logging
 				writer.WriteAt(0, classDef.type.Name+Environment.NewLine);
 
-				Debug.Log(writer);
+				
+				Debug.Log($"Writing class {classDef.type.Name} to {path}");
+				Debug.Log(writer.ToString());
+				
 			}
 			else
 			{
@@ -113,31 +118,32 @@ namespace NetworkScopes.CodeGeneration
 			}
 		}
 
+		#if UNITY_EDITOR
 		private const string menuItem_AutoGenScopes = "Tools/Network Scopes/Auto Generate Scope Classes";
 		private const string menuItem_GenerateScopes = "Tools/Network Scopes/Generate Scopes";
 		private const string menuItem_LogScopes = "Tools/Network Scopes/Generate Scopes (Log only)";
-
+		
 		[MenuItem(menuItem_AutoGenScopes, false, 500)]
-		public static void Menu_AutoGenerateScopes()
+		static void Menu_AutoGenerateScopes()
 		{
 			ScopeGenerationConfig.AutoGenerateScopeClasses = !ScopeGenerationConfig.AutoGenerateScopeClasses;
 		}
 
 		[MenuItem(menuItem_AutoGenScopes, true)]
-		public static bool Menu_AutoGenerateScopes_Validate()
+		static bool Menu_AutoGenerateScopes_Validate()
 		{
 			Menu.SetChecked(menuItem_AutoGenScopes, ScopeGenerationConfig.AutoGenerateScopeClasses);
 			return true;
 		}
 
 		[MenuItem(menuItem_GenerateScopes, false, 502)]
-		public static void Menu_GenerateScopesNow()
+		static void Menu_GenerateScopesNow()
 		{
 			GenerateNetworkScopes(false);
 		}
 
 		[MenuItem(menuItem_LogScopes, false, 501)]
-		public static void Menu_LogScopesNow()
+		static void Menu_LogScopesNow()
 		{
 			GenerateNetworkScopes(true);
 		}
@@ -149,5 +155,6 @@ namespace NetworkScopes.CodeGeneration
 			var method = type.GetMethod("Clear");
 			method.Invoke(new object(), null);
 		}
+		#endif
 	}
 }

@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Threading.Tasks;
 
 namespace NetworkScopes
 {
@@ -15,21 +16,44 @@ namespace NetworkScopes
 
     public class ValuePromise<T> : INetworkPromise<T> where T : IComparable
     {
+        private T lastValue;
         private Action<T> _onReceivePromise;
+
+        private int lastValueId = 0;
 
         void INetworkPromise.Receive(ISignalReader reader)
         {
-            T value = reader.ReadValue<T>();
+            T value = lastValue = reader.ReadValue<T>();
+            
+            lastValueId++;
 
             if (_onReceivePromise != null)
                 _onReceivePromise(value);
-            else
-                UnityEngine.Debug.Log("Received unhandled promise");
+            // else
+                // Debug.Log("Received unhandled promise");
         }
 
         public void ContinueWith(Action<T> onReceivePromise)
         {
             _onReceivePromise += onReceivePromise;
+        }
+
+        public async Task<T> GetAsync(int timeoutInSeconds = 3)
+        {
+            DateTime cutoffTime = DateTime.Now.AddSeconds(timeoutInSeconds);
+
+            int valueId = lastValueId;
+
+            do
+            {
+                await Task.Delay(1);
+            }
+            while (valueId == lastValueId && DateTime.Now < cutoffTime);
+            
+            if (DateTime.Now >= cutoffTime)
+                Debug.LogError("Time expired!");
+            
+            return lastValue;
         }
     }
     public class ObjectPromise<T> : INetworkPromise<T> where T : ISerializable, new()
@@ -43,7 +67,7 @@ namespace NetworkScopes
             if (_onReceivePromise != null)
                 _onReceivePromise(value);
             else
-                UnityEngine.Debug.Log("Received unhandled promise");
+                Debug.Log("Received unhandled promise");
         }
 
         public void ContinueWith(Action<T> onReceivePromise)

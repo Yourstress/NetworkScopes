@@ -9,8 +9,5 @@ namespace NetworkScopes
 
 		void Connect(string hostnameOrIP, int port);
 		void Disconnect();
-
-		event Action OnConnected;
-		event Action OnDisconnected;
 	}
 }

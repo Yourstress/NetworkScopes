@@ -1,8 +1,8 @@
-
+	
 using System;
 using System.Collections.Generic;
-using NetworkScopes.ServiceProviders.Lidgren;
-using UnityEngine;
+using NetworkScopes.ServiceProviders;
+using NetworkScopes.ServiceProviders.LiteNetLib;
 
 namespace NetworkScopes
 {
@@ -22,6 +22,7 @@ namespace NetworkScopes
 
 		protected readonly Dictionary<ScopeChannel,IServerScope> registeredScopes = new Dictionary<ScopeChannel, IServerScope>();
 
+		public abstract IReadOnlyCollection<NetworkPeer> Peers { get; }
 		public int PeerCount { get; private set; }
 
 		public IServerScope defaultScope;
@@ -40,7 +41,7 @@ namespace NetworkScopes
 
 			if (defaultScope == null)
 				defaultScope = newScope;
-
+			
 			ScopeChannel channel = channelGenerator.AllocateValue();
 
 			// TODO: create channel for each registered scope -- channel hard coded to 0!!
@@ -61,9 +62,9 @@ namespace NetworkScopes
 
 		protected void PeerConnected(INetworkPeer peer)
 		{
-			OnPeerConnected(peer);
-
 			PeerCount++;
+			
+			OnPeerConnected(peer);
 
 			if (defaultScope == null)
 				throw new Exception("Default scope is not yet set.");
@@ -93,14 +94,13 @@ namespace NetworkScopes
 			}
 			else
 			{
-				Debug.LogWarningFormat("Server could not process signal on unknown channel {0}.", targetChannel);
+				Debug.LogWarning($"Server could not process signal on unknown channel {targetChannel}.");
 			}
 		}
-
-		// Static server factory methods
-		public static LidgrenServer CreateLidgrenServer()
+		
+		public static NetworkServer CreateLiteNetLibServer()
 		{
-			return new LidgrenServer();
+			return new LiteNetServer();
 		}
 	}
 }

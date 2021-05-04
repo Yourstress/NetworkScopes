@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using UnityEditor;
 
 namespace NetworkScopes.CodeGeneration
 {
@@ -271,6 +270,7 @@ namespace NetworkScopes.CodeGeneration
 
 		private string GetTypeSerializerClassPath(Type serializableType)
 		{
+			#if UNITY_EDITOR
 			// name will always be saved with a "_Serialization" suffix
 			string fileName = string.Format("{0}_Serialization", serializableType.Name);
 
@@ -283,6 +283,9 @@ namespace NetworkScopes.CodeGeneration
 				assetPath = AssetDatabase.GUIDToAssetPath(assetGuids[0]);
 
 			return assetPath;
+			#else
+			throw new NotImplementedException();
+			#endif
 		}
 
 		public void GenerateTypeSerializers()

@@ -1,7 +1,6 @@
 
 namespace NetworkScopes
 {
-	using UnityEngine;
 	using System;
 	using System.Linq;
 	using System.Reflection;
@@ -19,24 +18,26 @@ namespace NetworkScopes
 
 		public static void Invoke(object rootObject, MethodInfo method, object[] parameters)
 		{
-//			try
-//			{
+			try
+			{
 				method.Invoke(rootObject, parameters);
-//			}
-//			catch (Exception e)
-//			{
-//				if (method != null)
-//					Debug.LogErrorFormat("Failed to call method {0}.{1}", method.DeclaringType.Name, method.Name);
-//				else
-//					Debug.LogErrorFormat("Failed to call unbound method in {0}", rootObject.GetType().Name);
+			}
+			catch (Exception e)
+			{
+				if (method != null)
+					Debug.LogError($"Failed to call method {method.DeclaringType.Name}.{method.Name}");
+				else
+					Debug.LogError($"Failed to call unbound method in {rootObject.GetType().Name}");
 
-//				Debug.LogException(e);
-//			}
+				Debug.LogException(e);
+			}
 		}
 	}
 
 	public static class SignalMethodBinder
 	{
+		private static Dictionary<Type, Deserializer> cachedDeserializers = new Dictionary<Type, Deserializer>(4);
+		
 		class Deserializer : Dictionary<int, MethodInfo>
 		{
 			public Deserializer(Type scopeType)
@@ -54,12 +55,12 @@ namespace NetworkScopes
 					if (method.Name.StartsWith("ReceiveSignal_"))
 					{
 						name = method.Name.Remove(0, 14);
-						hash = name.GetHashCode();
+						hash = name.GetConsistentHashCode();
 					}
 					else if (method.Name.StartsWith("ReceivePromise_"))
 					{
 						name = method.Name.Remove(0, 15);
-						hash = ("#" + name).GetHashCode();
+						hash = ("#" + name).GetConsistentHashCode();
 					}
 					else
 						continue;
@@ -68,8 +69,6 @@ namespace NetworkScopes
 				}
 			}
 		}
-
-		private static Dictionary<Type, Deserializer> cachedDeserializers = new Dictionary<Type, Deserializer>(4);
 
 		public static void BindScope(IServerScope serverScope)
 		{
@@ -84,7 +83,7 @@ namespace NetworkScopes
 		private static void BindScopeInternal(Type scopeType, Type requiredBaseType)
 		{
 			Type scopeParentType = scopeType;
-			while (!scopeParentType.BaseType.IsGenericType || scopeParentType.BaseType.GetGenericTypeDefinition() != requiredBaseType)
+			while (scopeParentType.BaseType != null && (!scopeParentType.BaseType.IsGenericType || scopeParentType.BaseType.GetGenericTypeDefinition() != requiredBaseType))
 				scopeParentType = scopeParentType.BaseType;
 
 			if (!cachedDeserializers.ContainsKey(scopeType))
@@ -117,13 +116,10 @@ namespace NetworkScopes
 		{
 			Deserializer deserializer = cachedDeserializers[scopeType];
 
-			MethodInfo method;
-
-			if (!deserializer.TryGetValue(signalType, out method))
+			if (!deserializer.TryGetValue(signalType, out MethodInfo method))
 			{
-				Debug.LogErrorFormat("Could not find method with signal type {0} in {1}", signalType, scopeType.Name);
+				Debug.LogError($"Could not find method with signal type {signalType} in {scopeType.Name}");
 			}
-
 
 			return method;
 		}
