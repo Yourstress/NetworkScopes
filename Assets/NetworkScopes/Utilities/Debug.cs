@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using LiteNetLib;
 
-namespace NewNetworkScopes
+namespace NetworkScopes
 {
     public static class Debug
     {
