@@ -22,7 +22,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddAssignmentInstruction(TypeDefinition type, string varName, string assignmentValue)
 		{
-			AddRawInstruction(string.Format("{0} {1} = {2};", type.Name, varName, assignmentValue));
+			AddRawInstruction($"{type.Name} {varName} = {assignmentValue};");
 		}
 
 		/// <summary>
@@ -30,7 +30,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddAssignmentInstruction(string varName, string assignmentValue)
 		{
-			AddRawInstruction(string.Format("{0} = {1};", varName, assignmentValue));
+			AddRawInstruction($"{varName} = {assignmentValue};");
 		}
 
 		/// <summary>
@@ -38,7 +38,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddReturnStatement(string value)
 		{
-			AddRawInstruction(string.Format("return {0};", value));
+			AddRawInstruction($"return {value};");
 		}
 
 		/// <summary>
@@ -46,7 +46,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddMethodCallWithAssignment(string assignmentName, string assignmentType, string objectName, String methodName/*, params string[] parameters*/)
 		{
-			AddRawInstruction(string.Format("{0} {1} = {2}.{3}();", assignmentType, assignmentName, objectName, methodName));
+			AddRawInstruction($"{assignmentType} {assignmentName} = {objectName}.{methodName}();");
 		}
 
 		/// <summary>
@@ -54,7 +54,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddMethodCallWithAssignment(string assignmentName, string objectName, String methodName/*, params string[] parameters*/)
 		{
-			AddRawInstruction(string.Format("{0} = {1}.{2}();", assignmentName, objectName, methodName));
+			AddRawInstruction($"{assignmentName} = {objectName}.{methodName}();");
 		}
 
 		/// <summary>
@@ -62,7 +62,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddMethodCall(string objectName, string methodName, params string[] parameters)
 		{
-			AddRawInstruction(string.Format("{0}.{1}({2});", objectName, methodName, string.Join(", ", parameters)));
+			AddRawInstruction($"{objectName}.{methodName}({string.Join(", ", parameters)});");
 		}
 
 		/// <summary>
@@ -70,7 +70,7 @@ namespace NetworkScopes.CodeGeneration
 		/// </summary>
 		public void AddLocalMethodCall(string methodName, params string[] parameters)
 		{
-			AddRawInstruction(string.Format("{0}({1});", methodName, string.Join(", ", parameters)));
+			AddRawInstruction($"{methodName}({string.Join(", ", parameters)});");
 		}
 
 		/// <summary>
@@ -79,7 +79,7 @@ namespace NetworkScopes.CodeGeneration
 		public void AddLocalMethodCallWithAssignment(string methodName, string assignmentType, string assignmentName,
 			params string[] parameters)
 		{
-			AddRawInstruction(string.Format("{0} {1} = {2}({3});", assignmentType, assignmentName, methodName, string.Join(", ", parameters)));
+			AddRawInstruction($"{assignmentType} {assignmentName} = {methodName}({string.Join(", ", parameters)});");
 		}
 
 		public void BeginForIntLoop(string variableName, string startValue, string maxValueExclusive)
@@ -91,7 +91,7 @@ namespace NetworkScopes.CodeGeneration
 
 		public void BeginForEachLoop(TypeDefinition elementType, string elementName, string enumerableObject)
 		{
-			AddRawInstruction(string.Format("foreach ({0} {1} in {2})", elementType, elementName, enumerableObject));
+			AddRawInstruction($"foreach ({elementType} {elementName} in {enumerableObject})");
 			AddRawInstruction("{");
 			Indent();
 		}

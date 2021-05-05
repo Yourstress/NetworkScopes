@@ -191,14 +191,24 @@ namespace NetworkScopes.CodeGeneration
 				foreach (ParameterDefinition parameter in method.Parameters)
 				{
 					if (!string.IsNullOrEmpty(parameter.type.Namespace))
-						imports.Add(parameter.type.Namespace);
+					{
+						if (parameter.type.Namespace != nameof(System))
+							imports.Add(parameter.type.Namespace);
+					}
 				}
 			}
 
 			// write them to the script writer
 			foreach (string import in imports)
 			{
-				if (!string.IsNullOrEmpty(import) && import != nameof(NetworkScopes))
+				if (import == nameof(NetworkScopes))
+				{
+					bool shouldImportNS = !type.Namespace.StartsWith(nameof(NetworkScopes));
+
+					if (!shouldImportNS)
+						continue;
+				}
+				if (!string.IsNullOrEmpty(import) && !type.Namespace.StartsWith(import) )
 					writer.WriteFullLineFormat("using {0};", import);
 			}
 		}
@@ -207,7 +217,7 @@ namespace NetworkScopes.CodeGeneration
 		{
 			foreach (string import in imports)
 			{
-				this.imports.Add(import);
+				AddImport(import);
 			}
 
 			imports.Clear();
@@ -215,12 +225,17 @@ namespace NetworkScopes.CodeGeneration
 
 		public void ResolveImportType(TypeDefinition importType)
 		{
-			imports.Add(importType.Namespace);
+			AddImport(importType.Namespace);
 		}
 
 		public void ResolveImportType(Type importType)
 		{
-			imports.Add(importType.Namespace);
+			AddImport(importType.Namespace);
+		}
+
+		void AddImport(string namespaceName)
+		{
+			imports.Add(namespaceName);
 		}
 	}
 }
