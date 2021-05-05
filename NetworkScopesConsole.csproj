@@ -7,23 +7,21 @@
 
     <ItemGroup>
       <Compile Remove="Temp\**" />
-      <Compile Remove="NetworkScopes\**" />
       <Compile Remove="Library\**" />
       <Compile Remove="ProjectSettings\**" />
     </ItemGroup>
 
     <ItemGroup>
       <EmbeddedResource Remove="Temp\**" />
-      <EmbeddedResource Remove="NetworkScopes\**" />
       <EmbeddedResource Remove="Library\**" />
       <EmbeddedResource Remove="ProjectSettings\**" />
     </ItemGroup>
 
     <ItemGroup>
       <None Remove="Temp\**" />
-      <None Remove="NetworkScopes\**" />
       <None Remove="Library\**" />
       <None Remove="ProjectSettings\**" />
+      <None Remove="**\*.meta" />
     </ItemGroup>
 
 </Project>
