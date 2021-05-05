@@ -38,7 +38,7 @@ namespace NetworkScopes
             _onReceivePromise += onReceivePromise;
         }
 
-        public async Task<T> GetAsync(int timeoutInSeconds = 3)
+        public async System.Threading.Tasks.Task<T> GetAsync(int timeoutInSeconds = 3)
         {
             DateTime cutoffTime = DateTime.Now.AddSeconds(timeoutInSeconds);
 
@@ -46,7 +46,7 @@ namespace NetworkScopes
 
             do
             {
-                await Task.Delay(1);
+                await System.Threading.Tasks.Task.Delay(1);
             }
             while (valueId == lastValueId && DateTime.Now < cutoffTime);
             
