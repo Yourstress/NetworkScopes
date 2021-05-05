@@ -25,7 +25,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
         private INetworkDispatcher _listener;
         
         #if !UNITY_ENGINE
-        private readonly CancellationTokenSource _cancellationTokenSource = new();
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         #endif
 
         public static NetworkDispatcher CreateDispatcher(INetworkDispatcher listener)

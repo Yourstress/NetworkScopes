@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using NetworkScopes.CodeGeneration;
 using UnityEditor;
+using UnityEngine;
 
 namespace NetworkScopes
 {

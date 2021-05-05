@@ -1,5 +1,10 @@
 namespace NetworkScopes
 {
+	public interface INetworkServer : IServerProvider, IServerScopeProvider
+	{ }
+	public interface INetworkClient : IClientProvider, IScopeRegistrar
+	{ }
+	
 	public interface ISignalProvider
 	{
 		ISignalWriter CreateSignal(short scopeChannel);

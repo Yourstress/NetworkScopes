@@ -1,8 +1,7 @@
 {
     "name": "com.diwaniyalabs.networkscopes.editor",
     "references": [
-        "com.diwaniyalabs.networkscopes",
-        "com.diwaniyalabs.codegeneration"
+        "com.diwaniyalabs.networkscopes"
     ],
     "optionalUnityReferences": [],
     "includePlatforms": [

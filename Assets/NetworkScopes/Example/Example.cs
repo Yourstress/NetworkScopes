@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using NetworkScopes.CodeGeneration;
+using NetworkScopes.ServiceProviders.LiteNetLib;
 
 namespace NetworkScopes.Examples
 {
@@ -15,7 +16,7 @@ namespace NetworkScopes.Examples
         
         public static async Task TestNetworkScopes()
         {
-            NetworkServer server = NetworkServer.CreateLiteNetLibServer();
+            INetworkServer server = new LiteNetServer<LiteNetPeer>();
             MyServerMatch serverMatch = server.RegisterScope<MyServerMatch>(0);
 
             server.StartListening(7979);
