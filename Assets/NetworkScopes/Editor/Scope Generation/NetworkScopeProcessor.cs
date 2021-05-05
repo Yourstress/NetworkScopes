@@ -110,7 +110,7 @@ namespace NetworkScopes.CodeGeneration
 
 				
 				Debug.Log($"Writing class {classDef.type.Name} to {path}");
-				Debug.Log(writer.ToString());
+				// Debug.Log(writer.ToString());
 				
 			}
 			else
