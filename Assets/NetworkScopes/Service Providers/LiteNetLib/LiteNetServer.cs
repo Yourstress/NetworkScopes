@@ -6,17 +6,17 @@ using LiteNetLib;
 
 namespace NetworkScopes.ServiceProviders.LiteNetLib
 {
-    public class LiteNetServer : NetworkServer, INetEventListener, INetworkDispatcher
+    public class LiteNetServer<TPeer> : NetworkServer<TPeer>, INetEventListener, INetworkDispatcher where TPeer : LiteNetPeer, new()
     {
         private NetManager _netServer;
         private NetworkDispatcher _dispatcher;
 
-        private readonly Dictionary<NetPeer, LiteNetPeer> _connectionPeers = new Dictionary<NetPeer, LiteNetPeer>();
+        private readonly Dictionary<NetPeer, TPeer> _connectionPeers = new Dictionary<NetPeer, TPeer>();
         
         #region NetworkServer implementation
         public override bool IsListening => _netServer?.IsRunning ?? false;
 
-        public override IReadOnlyCollection<NetworkPeer> Peers => _connectionPeers.Values;
+        public override IReadOnlyCollection<TPeer> Peers => _connectionPeers.Values;
         
         public override bool StartListening(int port)
         {
@@ -68,14 +68,16 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
         #region INetEventListener implementation
         void INetEventListener.OnPeerConnected(NetPeer netPeer)
         {
-            LiteNetPeer peer = new LiteNetPeer(netPeer);
+            TPeer peer = new TPeer();
+            peer.InitializeNetPeer(netPeer);
+            
             _connectionPeers[netPeer] = peer;
             PeerConnected(peer);
         }
 
         void INetEventListener.OnPeerDisconnected(NetPeer netPeer, DisconnectInfo disconnectInfo)
         {
-            if (_connectionPeers.TryGetValue(netPeer, out LiteNetPeer peer))
+            if (_connectionPeers.TryGetValue(netPeer, out TPeer peer))
             {
                 _connectionPeers.Remove(netPeer);
 
@@ -95,7 +97,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
 
         void INetEventListener.OnNetworkReceive(NetPeer netPeer, NetPacketReader reader, DeliveryMethod deliveryMethod)
         {
-            if (_connectionPeers.TryGetValue(netPeer, out LiteNetPeer peer))
+            if (_connectionPeers.TryGetValue(netPeer, out TPeer peer))
             {
                 ISignalReader signal = new SignalReader(reader);
                 ProcessSignal(signal, peer);                

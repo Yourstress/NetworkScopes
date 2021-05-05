@@ -6,7 +6,7 @@ using NetworkScopes.ServiceProviders.LiteNetLib;
 
 namespace NetworkScopes
 {
-	public abstract class NetworkServer : IServerProvider, IServerScopeProvider
+	public abstract class NetworkServer<TPeer> : INetworkServer where TPeer : INetworkPeer
 	{
 		// IServerProvider
 		public abstract bool IsListening { get; }
@@ -22,7 +22,7 @@ namespace NetworkScopes
 
 		protected readonly Dictionary<ScopeChannel,IServerScope> registeredScopes = new Dictionary<ScopeChannel, IServerScope>();
 
-		public abstract IReadOnlyCollection<NetworkPeer> Peers { get; }
+		public abstract IReadOnlyCollection<TPeer> Peers { get; }
 		public int PeerCount { get; private set; }
 
 		public IServerScope defaultScope;
@@ -38,18 +38,23 @@ namespace NetworkScopes
 		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()
 		{
 			TServerScope newScope = new TServerScope();
+			RegisterScope(newScope, scopeIdentifier);
+			return newScope;
+		}
 
-			if (defaultScope == null)
-				defaultScope = newScope;
-			
+		public TServerScope RegisterScope<TServerScope>(TServerScope scope, byte scopeIdentifier) where TServerScope : IServerScope
+		{
 			ScopeChannel channel = channelGenerator.AllocateValue();
 
 			// TODO: create channel for each registered scope -- channel hard coded to 0!!
-			newScope.InitializeServerScope(this, scopeIdentifier, channel);
+			scope.InitializeServerScope(this, scopeIdentifier, channel);
 
-			registeredScopes[channel] = newScope;
+			registeredScopes[channel] = scope;
+			
+			if (defaultScope == null)
+				defaultScope = scope;
 
-			return newScope;
+			return scope;
 		}
 
 		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
@@ -96,11 +101,6 @@ namespace NetworkScopes
 			{
 				Debug.LogWarning($"Server could not process signal on unknown channel {targetChannel}.");
 			}
-		}
-		
-		public static NetworkServer CreateLiteNetLibServer()
-		{
-			return new LiteNetServer();
 		}
 	}
 }
