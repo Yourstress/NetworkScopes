@@ -100,12 +100,12 @@ namespace NetworkScopes.CodeGeneration
 			}
 
 			// find primitive type serializer method within ISignalWriter
-			MethodInfo paramWriteMethod = SignalUtility.GetWriterMethod(variableType);
+			SignalWriterMethod paramWriteMethod = new SignalWriterMethod(variableType);
 
 			// if it's found, immediately write the command to serialize it into the signal writer
-			if (paramWriteMethod != null)
+			if (paramWriteMethod.IsAvailable)
 			{
-				targetMethod.AddMethodCall("writer", paramWriteMethod.Name, variableName);
+				paramWriteMethod.AddMethodCall(targetMethod, variableName);
 				return;
 			}
 
@@ -225,17 +225,12 @@ namespace NetworkScopes.CodeGeneration
 			}
 
 			// find primitive type deserializer method within ISignalReader
-			MethodInfo paramReadMethod = SignalUtility.GetReaderMethod(variableType);
+			SignalReaderMethod paramReadMethod = new SignalReaderMethod(variableType);
 
 			// if it's found, immediately write the command to deserialize it from the signal reader
-			if (paramReadMethod != null)
+			if (paramReadMethod.IsAvailable)
 			{
-				if (deserializationOptions == DeserializationOptions.AllocateVariable)
-					targetMethod.AddMethodCallWithAssignment(variableName, variableType.GetReadableName(), "reader", paramReadMethod.Name);
-				else if (deserializationOptions == DeserializationOptions.DontAllocateVariable)
-					targetMethod.AddMethodCallWithAssignment(variableName, "reader", paramReadMethod.Name);
-				else
-					throw new Exception("Undefined DeserializaOption");
+				paramReadMethod.AddMethodCall(targetMethod, variableName, deserializationOptions);
 				return;
 			}
 
@@ -274,22 +269,22 @@ namespace NetworkScopes.CodeGeneration
 
 		private string GetTypeSerializerClassPath(Type serializableType)
 		{
-			#if UNITY_EDITOR
 			// name will always be saved with a "_Serialization" suffix
-			string fileName = string.Format("{0}_Serialization", serializableType.Name);
+			// string fileName = $"{serializableType.Name}_Serialization";
 
-			string[] assetGuids = AssetDatabase.FindAssets(string.Format("t:MonoScript {0}", fileName));
-			string assetPath;
+			string classPath = FileUtility.FindClassPath(serializableType.Name);
+			
+			// make sure original class is partial
+			string classText = File.ReadAllText(classPath);
+			if (classText.Contains($"class {serializableType.Name}") &&
+			    !classText.Contains($"partial class {serializableType.Name}"))
+			{
+				classText = classText.Replace($"class {serializableType.Name}", $"partial class {serializableType.Name}");
+				Debug.Log($"Adding partial keyword to the class {serializableType.Name}.");
+				File.WriteAllText(classPath, classText);
+			}
 
-			if (assetGuids.Length == 0)
-				assetPath = string.Format("Assets/{0}.cs", fileName);
-			else
-				assetPath = AssetDatabase.GUIDToAssetPath(assetGuids[0]);
-
-			return assetPath;
-			#else
-			throw new NotImplementedException();
-			#endif
+			return classPath.Replace($"{serializableType.Name}.cs", $"{serializableType.Name}_Serialization.cs");
 		}
 
 		public void GenerateTypeSerializers()
