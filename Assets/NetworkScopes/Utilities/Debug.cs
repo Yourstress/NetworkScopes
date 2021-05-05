@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using LiteNetLib;
 
-namespace NetworkScopes
+namespace NewNetworkScopes
 {
     public static class Debug
     {
@@ -15,10 +15,18 @@ namespace NetworkScopes
         
         static string GetCurrentTimeString() => DateTime.Now.ToString(CultureInfo.InvariantCulture).Replace("/", "-").Replace(":", ".");
 
+        private static void LogRaw(string str)
+        {
+            #if UNITY_EDITOR
+            UnityEngine.Debug.Log(str);
+            #else
+            Console.WriteLine();
+            #endif
+        }
+
         public static void Log(string str)
         {
-            Console.WriteLine($"[NetworkScopes {GetCurrentTimeString()}] {str}");
-            
+            LogRaw($"[NetworkScopes {GetCurrentTimeString()}] {str}");
         }
 
         public static void LogWarning(string str)
@@ -34,7 +42,7 @@ namespace NetworkScopes
         public static void LogException(Exception exception)
         {
             Log(exception.Message);
-            Console.WriteLine(exception.StackTrace);
+            LogRaw(exception.StackTrace);
         }
 
         public static void LogUnconnectedMessage(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
