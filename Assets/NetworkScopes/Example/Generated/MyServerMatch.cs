@@ -8,19 +8,17 @@ namespace NetworkScopes.Examples
 	{
 		protected override void Test1()
 		{
-			Debug.Log("Server <-- Test1()");
+			throw new System.NotImplementedException();
 		}
 
 		protected override void Test2(string str)
 		{
-			Debug.Log($"Server <-- Test1({str})");
+			throw new System.NotImplementedException();
 		}
 
 		protected override int Test3()
 		{
-			int ret = new Random().Next();
-			Debug.Log($"Server <--> Test3(), returning {ret}");
-			return ret;
+			throw new System.NotImplementedException();
 		}
 
 	}

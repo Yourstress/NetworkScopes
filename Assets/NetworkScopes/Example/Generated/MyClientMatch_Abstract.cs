@@ -1,4 +1,3 @@
-using System;
 
 namespace NetworkScopes.Examples
 {
@@ -20,7 +19,6 @@ namespace NetworkScopes.Examples
 
 		void ISender.Test1()
 		{
-			DateTime dateTime = DateTime.Now;
 			ISignalWriter writer = CreateSignal(723512716 /*hash 'Test1'*/);
 			SendSignal(writer);
 		}

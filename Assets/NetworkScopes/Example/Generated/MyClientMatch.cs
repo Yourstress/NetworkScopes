@@ -1,5 +1,3 @@
-using NetworkScopes.Examples;
-using System;
 
 namespace NetworkScopes.Examples
 {
