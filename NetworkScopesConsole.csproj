@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="Temp\**" />
+      <Compile Remove="NetworkScopes\**" />
+      <Compile Remove="Library\**" />
+      <Compile Remove="ProjectSettings\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Temp\**" />
+      <EmbeddedResource Remove="NetworkScopes\**" />
+      <EmbeddedResource Remove="Library\**" />
+      <EmbeddedResource Remove="ProjectSettings\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Temp\**" />
+      <None Remove="NetworkScopes\**" />
+      <None Remove="Library\**" />
+      <None Remove="ProjectSettings\**" />
+    </ItemGroup>
+
+</Project>

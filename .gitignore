@@ -2,9 +2,8 @@
 Library/
 Temp/
 ProjectSettings/
+bin/
 obj/
-*.csproj
 *.userprefs
-*.sln
 *.DS_Store
-/.idea
+.idea
