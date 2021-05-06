@@ -1,6 +1,6 @@
 using System;
 
-namespace NetworkScopes.ServiceProviders
+namespace NetworkScopes
 {
 	public abstract class NetworkPeer : INetworkPeer
 	{

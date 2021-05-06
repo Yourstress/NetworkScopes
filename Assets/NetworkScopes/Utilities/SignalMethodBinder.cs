@@ -72,7 +72,7 @@ namespace NetworkScopes
 
 		public static void BindScope(IServerScope serverScope)
 		{
-			BindScopeInternal(serverScope.GetType(), typeof(ServerScope<>));
+			BindScopeInternal(serverScope.GetType(), typeof(ServerScope<,>));
 		}
 
 		public static void BindScope(IClientScope clientScope)

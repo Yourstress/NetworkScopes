@@ -20,7 +20,7 @@ namespace NetworkScopes
             #if UNITY_EDITOR
             UnityEngine.Debug.Log(str);
             #else
-            Console.WriteLine();
+            Console.WriteLine(str);
             #endif
         }
 
