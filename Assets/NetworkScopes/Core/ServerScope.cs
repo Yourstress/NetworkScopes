@@ -9,7 +9,7 @@ namespace NetworkScopes
 		where TPeer : INetworkPeer
 	{
 		protected new TPeer SenderPeer => (TPeer)base.SenderPeer;
-		
+
 		protected virtual void OnPeerEntered(TPeer peer) {}
 		protected virtual void OnPeerExited(TPeer peer) {}
 
@@ -53,7 +53,7 @@ namespace NetworkScopes
 		// stores NetworkPromise objects awaiting peer responses
 		private readonly Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
 
-		private ShortGenerator _channelGenerator;
+		private ChannelGenerator _channelGenerator;
 
 		protected ServerScope()
 		{
@@ -65,7 +65,7 @@ namespace NetworkScopes
 			_channelGenerator.DeallocateValue(channel);
 		}
 
-		public void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier serverScopeIdentifier, ShortGenerator channelGenerator)
+		public void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier serverScopeIdentifier, ChannelGenerator channelGenerator)
 		{
 			scopeRegistrar = scopeProvider;
 			scopeIdentifier = serverScopeIdentifier;

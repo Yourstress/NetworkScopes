@@ -27,13 +27,7 @@ namespace NetworkScopes
 
 		public IServerScope defaultScope;
 
-		private readonly ShortGenerator channelGenerator = new ShortGenerator(short.MinValue, short.MaxValue);
-
-		public NetworkServer()
-		{
-			// the channel generator should never generate the system channel
-			channelGenerator.AllocateManualValue(ScopeChannel.SystemChannel);
-		}
+		private readonly ChannelGenerator channelGenerator = new ChannelGenerator(short.MinValue, short.MaxValue);
 
 		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()
 		{

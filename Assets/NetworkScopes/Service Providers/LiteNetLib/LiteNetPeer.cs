@@ -24,7 +24,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
 
         public override void SendSignal(ISignalWriter signal)
         {
-            _peer.Send(signal as SignalWriter, 0, DeliveryMethod.ReliableOrdered);
+            _peer.Send(signal as SignalWriter, DeliveryMethod.ReliableOrdered);
         }
     }
 }

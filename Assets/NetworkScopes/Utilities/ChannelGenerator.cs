@@ -1,14 +1,14 @@
 ﻿
 namespace NetworkScopes
 {
-    public class ShortGenerator
+    public class ChannelGenerator
     {
         bool[] valueStates;
 
         short minimumValue;
         int currentIndex;
 
-        public ShortGenerator (short minimum, short maximum)
+        public ChannelGenerator (short minimum, short maximum)
         {
             int rangeSize = (maximum - minimum) + 1;
 
@@ -22,16 +22,28 @@ namespace NetworkScopes
             int start = currentIndex;
             int numValues = valueStates.Length;
 
-            for (int x = 0; x < numValues; x++) {
+            for (int x = 0; x < numValues; x++)
+            {
                 int vindex = (start + x) % numValues;
 
+                short value = (short) (minimumValue + vindex);
+                
+                // skip system channels
+                if (ScopeChannel.IsSystemScope(value))
+                {
+                    start = ScopeChannel.LastSystemChannel;
+                    x = 0;
+                    continue;
+                }
+
                 // if it's unused, use and return it
-                if (!valueStates [vindex]) {
+                if (!valueStates [vindex])
+                {
                     valueStates [vindex] = true;
 
                     // stop at the next one
                     currentIndex = vindex + 1;
-                    return (short)(minimumValue + vindex);
+                    return value;
                 }
             }
 

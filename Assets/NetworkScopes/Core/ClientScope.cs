@@ -17,7 +17,7 @@ namespace NetworkScopes
 		private IClientSignalProvider _signalProvider;
 
 		public ScopeIdentifier scopeIdentifier { get; private set; }
-		public ScopeChannel currentChannel { get; private set; }
+		public ScopeChannel channel { get; private set; }
 
 		private readonly NetworkPromiseHandler promiseHandler = new NetworkPromiseHandler();
 
@@ -33,7 +33,7 @@ namespace NetworkScopes
 		protected ISignalWriter CreateSignal(int signalID)
 		{
 			// return writer based on the current network medium (service provider)
-			ISignalWriter signal = _signalProvider.CreateSignal(currentChannel);
+			ISignalWriter signal = _signalProvider.CreateSignal(channel);
 			signal.Write(signalID);
 			return signal;
 		}
@@ -73,7 +73,7 @@ namespace NetworkScopes
 			if (isActive)
 				throw new Exception("Failed to enter active scope.");
 
-			currentChannel = channel;
+			this.channel = channel;
 			isActive = true;
 
 			OnEnterScope();

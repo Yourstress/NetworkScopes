@@ -2,7 +2,7 @@
 namespace NetworkScopes.Examples
 {
 	[Generated]
-	public abstract class MyServerMatch_Abstract : ServerScope<MyServerMatch_Abstract.ISender>, MyServerMatch_Abstract.ISender
+	public abstract class MyServerMatch_Abstract : ServerScope<MyPeer,MyServerMatch_Abstract.ISender>, MyServerMatch_Abstract.ISender
 	{
 		[Generated]
 		public interface ISender : IScopeSender

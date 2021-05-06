@@ -13,9 +13,9 @@ namespace NetworkScopes
 	}
 	public abstract class NetworkClient : IClientProvider, IClientSignalProvider
 	{
-		private readonly Dictionary<ScopeIdentifier,IClientScope> inactiveScopes = new Dictionary<ScopeIdentifier, IClientScope>();
 		private readonly Dictionary<ScopeChannel,IClientScope> activeScopes = new Dictionary<ScopeChannel, IClientScope>();
-		
+		private readonly Dictionary<ScopeIdentifier,IClientScope> inactiveScopes = new Dictionary<ScopeIdentifier, IClientScope>();
+
 		// IClientProvider
 		public abstract bool IsConnecting { get; protected set; }
 		public abstract bool IsConnected { get; protected set; }
@@ -44,6 +44,7 @@ namespace NetworkScopes
 		private string lastHost;
 		private int lastPort;
 
+		#region Setup
 		public TClientScope RegisterScope<TClientScope>(ScopeIdentifier scopeIdentifier) where TClientScope : IClientScope, new()
 		{
 			TClientScope scope = new TClientScope();
@@ -52,77 +53,9 @@ namespace NetworkScopes
 			inactiveScopes[scopeIdentifier] = scope;
 			return scope;
 		}
-
-		protected void ProcessSignal(ISignalReader signal)
-		{
-			ScopeChannel targetChannel = signal.ReadScopeChannel();
-
-			if (targetChannel == ScopeChannel.SystemChannel)
-			{
-				ProcessSystemSignal(signal);
-			}
-			// in order to receive a signal, the receiving scope must be active (got an Entered Scope system message).
-			else if (activeScopes.TryGetValue(targetChannel, out IClientScope targetScope))
-			{
-				targetScope.ProcessSignal(signal);
-			}
-			else
-			{
-				Debug.LogWarning($"Client could not process signal on unknown channel {targetChannel}.");
-			}
-		}
-
-		protected void ProcessSystemSignal(ISignalReader signal)
-		{
-			byte systemMessage = signal.ReadByte();
-
-			switch (systemMessage)
-			{
-				case SystemMessage.EnterScope:
-				{
-					// scope identifier tells us which inactive scope has been activated (entered)
-					ScopeIdentifier scopeID = signal.ReadScopeIdentifier();
-
-					// this tells us which channel to bind this newly entered scope to
-					ScopeChannel channel = signal.ReadScopeChannel();
-
-					if (inactiveScopes.TryGetValue(scopeID, out IClientScope targetScope))
-					{
-						// move the scope to the actives list
-						inactiveScopes.Remove(scopeID);
-						activeScopes.Add(channel, targetScope);
-
-						targetScope.EnterScope(channel);
-					}
-					else
-					{
-						Debug.LogWarning($"Failed to enter scope. No client scope is registered with the identifier {scopeID}.");
-					}
-					break;
-				}
-
-				case SystemMessage.ExitScope:
-				{
-					// this tells us which channel the target scope will be on
-					ScopeChannel channel = signal.ReadScopeChannel();
-
-					if (activeScopes.TryGetValue(channel, out IClientScope targetScope))
-					{
-						// move the scope back to the inactives list
-						activeScopes.Remove(channel);
-						inactiveScopes.Add(targetScope.scopeIdentifier, targetScope);
-
-						targetScope.ExitScope();
-					}
-					else
-					{
-						Debug.LogWarning($"Failed to exit scope. No client scope is registered on channel {channel}.");
-					}
-					break;
-				}
-			}
-		}
-
+		#endregion
+		
+		#region Connect/Disconnect
 		public void Connect(string hostOrIP, int port)
 		{
 			lastHost = hostOrIP;
@@ -155,7 +88,9 @@ namespace NetworkScopes
 			
 			Connect(lastHost, lastPort);
 		}
+		#endregion
 
+		#region Internal Network Callbacks
 		protected void DidConnect()
 		{
 			IsConnected = true;
@@ -209,6 +144,109 @@ namespace NetworkScopes
 			if (AutoRetryFailedConnection)
 				Reconnect();
 		}
+		
+		#endregion
+
+		#region Network Packet Handling
+		protected void ProcessSignal(ISignalReader signal)
+		{
+			ScopeChannel targetChannel = signal.ReadScopeChannel();
+
+			if (targetChannel.IsSystemChannel)
+			{
+				ProcessSystemSignal(targetChannel, signal);
+			}
+			// in order to receive a signal, the receiving scope must be active (got an Entered Scope system message).
+			else if (activeScopes.TryGetValue(targetChannel, out IClientScope targetScope))
+			{
+				targetScope.ProcessSignal(signal);
+			}
+			else
+			{
+				Debug.LogWarning($"Client could not process signal on unknown channel {targetChannel}.");
+			}
+		}
+
+		protected void ProcessSystemSignal(ScopeChannel systemChannel, ISignalReader signal)
+		{
+			switch (systemChannel)
+			{
+				// TODO: switcheraoo
+				case ScopeChannel.EnterScope:
+				{
+					// this tells us which channel to bind this newly entered scope to
+					ScopeChannel channel = signal.ReadScopeChannel();
+					
+					// scope identifier tells us which inactive scope has been activated (entered)
+					ScopeIdentifier scopeID = signal.ReadScopeIdentifier();
+
+					ProcessEnterScope(channel, scopeID);
+					break;
+				}
+
+				case ScopeChannel.ExitScope:
+				{
+					// this tells us which channel the target scope will be on
+					ScopeChannel channel = signal.ReadScopeChannel();
+
+					ProcessExitScope(channel);
+					break;
+				}
+				
+				case ScopeChannel.SwitchScope:
+				{
+					// read the prev and new channel in order to switch out existing scope
+					ScopeChannel prevChannel = signal.ReadScopeChannel();
+					ScopeChannel newChannel = signal.ReadScopeChannel();
+
+					// read scope identifier to determine the type of scope to use
+					ScopeIdentifier scopeId = signal.ReadScopeIdentifier();
+					
+					ProcessSwitchScope(prevChannel, newChannel, scopeId);
+					
+					break;
+				}
+			}
+
+			void ProcessEnterScope(ScopeChannel channel, ScopeIdentifier scopeID)
+			{
+				if (inactiveScopes.TryGetValue(scopeID, out IClientScope targetScope))
+				{
+					// move the scope to the actives list
+					inactiveScopes.Remove(scopeID);
+					activeScopes.Add(channel, targetScope);
+
+					targetScope.EnterScope(channel);
+				}
+				else
+				{
+					Debug.LogWarning($"Failed to enter scope. No client scope is registered with the identifier {scopeID}.");
+				}
+			}
+
+			void ProcessExitScope(ScopeChannel channel)
+			{
+				if (activeScopes.TryGetValue(channel, out IClientScope targetScope))
+				{
+					// move the scope back to the inactives list
+					activeScopes.Remove(channel);
+					inactiveScopes.Add(targetScope.scopeIdentifier, targetScope);
+
+					targetScope.ExitScope();
+				}
+				else
+				{
+					Debug.LogWarning($"Failed to exit scope. No client scope is registered on channel {channel}.");
+				}
+			}
+
+			void ProcessSwitchScope(ScopeChannel prevChannel, ScopeChannel newChannel, ScopeIdentifier scopeId)
+			{
+				ProcessExitScope(prevChannel);
+				ProcessEnterScope(newChannel, scopeId);
+			}
+		}
+		#endregion
 		
 		public static NetworkClient CreateLiteNetLibClient()
 		{

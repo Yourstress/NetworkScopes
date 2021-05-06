@@ -16,7 +16,7 @@ namespace NetworkScopes.Examples
         
         public static async Task TestNetworkScopes()
         {
-            INetworkServer server = new LiteNetServer<LiteNetPeer>();
+            INetworkServer server = new LiteNetServer<MyPeer>();
             MyServerMatch serverMatch = server.RegisterScope<MyServerMatch>(0);
 
             server.StartListening(7979);
@@ -46,7 +46,7 @@ namespace NetworkScopes.Examples
 
             while (!didStateChange)
                 await Task.Delay(100);
-            
+
             // Log("Client --> Test3() to server.");
             // clientMatch.SendToServer.Test2("hello");
             //
@@ -62,6 +62,10 @@ namespace NetworkScopes.Examples
 
                 switch (line)
                 {
+                    case "0":
+                        NetworkScopeProcessor.GenerateNetworkScopes(false);
+                        Environment.Exit(0);
+                        break;
                     case "1":
                         clientMatch.SendToServer.Test1();
                         break;
@@ -75,7 +79,6 @@ namespace NetworkScopes.Examples
                         sw.Stop();
                         
                         Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms");
-                    
                         break;
                 }
             }

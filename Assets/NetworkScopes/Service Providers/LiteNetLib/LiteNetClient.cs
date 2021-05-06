@@ -52,7 +52,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
 
         public override void SendSignal(ISignalWriter signal)
         {
-            _netClient.SendToAll(signal as SignalWriter, 0, DeliveryMethod.ReliableOrdered);
+            _netClient.SendToAll(signal as SignalWriter, DeliveryMethod.ReliableOrdered);
         }
         
         #region INetEventListener implementation
