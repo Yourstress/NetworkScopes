@@ -1,3 +1,4 @@
+using System;
 using LiteNetLib.Utils;
 
 namespace NetworkScopes
@@ -81,5 +82,9 @@ namespace NetworkScopes
             return reader.GetString();
         }
 
+        public DateTime ReadDateTime()
+        {
+            return DateTime.FromBinary(reader.GetLong());
+        }
     }
 }

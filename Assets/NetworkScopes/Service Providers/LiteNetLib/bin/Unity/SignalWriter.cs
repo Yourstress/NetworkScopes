@@ -1,4 +1,5 @@
 
+using System;
 using LiteNetLib;
 using LiteNetLib.Utils;
 
@@ -89,6 +90,11 @@ namespace NetworkScopes
         public void Write(string value)
         {
             Put(value);
+        }
+
+        public void Write(DateTime dateTime)
+        {
+            Put(dateTime.ToBinary());
         }
     }
 }

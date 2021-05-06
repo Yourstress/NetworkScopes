@@ -1,4 +1,6 @@
-﻿namespace NetworkScopes
+﻿using System;
+
+namespace NetworkScopes
 {
 	public interface ISignalReader
 	{
@@ -6,5 +8,9 @@
 		short ReadShort();
 		byte ReadByte();
 		int ReadInt32();
+
+		float ReadFloat();
+
+		DateTime ReadDateTime();
 	}
 }
