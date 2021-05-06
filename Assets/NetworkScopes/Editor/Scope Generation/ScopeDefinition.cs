@@ -77,10 +77,24 @@ namespace NetworkScopes.CodeGeneration
 			}
 
 			// and finally, make the scope def class an implementor of this interface
-			Type scopeConcreteBaseType = isServerScope ? typeof(ServerScope<>) : typeof(ClientScope<>);
+			Type scopeConcreteBaseType = isServerScope ? typeof(ServerScope<,>) : typeof(ClientScope<>);
 			TypeDefinition nestedClassType =
 				new TypeDefinition(string.Format("{0}.{1}", scopeDefinition.type.Name, senderInterface.type.Name));
-			scopeDefinition.baseType = TypeDefinition.MakeGenericType(scopeConcreteBaseType, nestedClassType);
+			if (isServerScope)
+			{
+				ServerScopeAttribute serverScope = (ServerScopeAttribute) scopeAttribute;
+
+				if (serverScope.peerType == null)
+					throw new Exception($"[{scopeDefinition.type.Name}] Can not generate scope because peerType is not assigned. Use a type that inherits {nameof(NetworkPeer)}.");
+				if (!serverScope.peerType.IsAssignableTo(typeof(INetworkPeer)))
+					throw new Exception($"[{scopeDefinition.type.Name}] Can not generate scope because the type {serverScope.peerType} does not inherit {nameof(NetworkPeer)}.");
+				
+				scopeDefinition.baseType = TypeDefinition.MakeGenericType(scopeConcreteBaseType, serverScope.peerType, nestedClassType);
+			}
+			else
+			{
+				scopeDefinition.baseType = TypeDefinition.MakeGenericType(scopeConcreteBaseType, nestedClassType);
+			}
 			scopeDefinition.interfaces.Add(nestedClassType);
 
 			scopeDefinition.nestedClasses.Add(senderInterface);

@@ -4,7 +4,28 @@ using NetworkScopes.Utilities;
 
 namespace NetworkScopes
 {
-	public abstract class ServerScope<TScopeSender> : IServerScope where TScopeSender : IScopeSender
+	public abstract class ServerScope<TPeer, TScopeSender> : ServerScope<TScopeSender>
+		where TScopeSender : IScopeSender
+		where TPeer : INetworkPeer
+	{
+		protected new TPeer SenderPeer => (TPeer)base.SenderPeer;
+		
+		protected virtual void OnPeerEntered(TPeer peer) {}
+		protected virtual void OnPeerExited(TPeer peer) {}
+
+		protected override void OnPeerEntered(INetworkPeer peer)
+		{
+			OnPeerEntered((TPeer)peer);
+		}
+
+		protected override void OnPeerExited(INetworkPeer peer)
+		{
+			OnPeerExited((TPeer)peer);
+		}
+	}
+	
+	public abstract class ServerScope<TScopeSender> : IServerScope
+		where TScopeSender : IScopeSender 
 	{
 		public string name { get { return GetType().Name; } }
 		public bool isActive { get; private set; }
@@ -13,7 +34,7 @@ namespace NetworkScopes
 
 		private IServerSignalProvider _signalProvider;
 
-		protected PeerTarget peerTarget = new PeerTarget();
+		protected readonly PeerTarget peerTarget = new PeerTarget();
 
 		public List<INetworkPeer> peers { get; private set; }
 
@@ -25,12 +46,12 @@ namespace NetworkScopes
 		/// </summary>
 		public IServerScope fallbackScope;
 
-		public INetworkPeer SenderPeer { get; private set; }
+		protected INetworkPeer SenderPeer { get; private set; }
 
 		public IScopeRegistrar scopeRegistrar { get; private set; }
 
 		// stores NetworkPromise objects awaiting peer responses
-		private Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
+		private readonly Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
 
 		protected ServerScope()
 		{
@@ -99,10 +120,8 @@ namespace NetworkScopes
 
 		NetworkPromiseHandler GetPromiseHandler(INetworkPeer peer)
 		{
-			NetworkPromiseHandler ph;
-
 			// if this peer doesn't have a promise handler, create one and add it to the dictionary (to be cleaned when peer is removed)
-			if (!peerPromiseHandlers.TryGetValue(peer, out ph))
+			if (!peerPromiseHandlers.TryGetValue(peer, out NetworkPromiseHandler ph))
 				peerPromiseHandlers[peer] = ph = new NetworkPromiseHandler();
 
 			return ph;

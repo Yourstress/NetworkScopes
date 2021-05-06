@@ -30,11 +30,21 @@ namespace NetworkScopes
 
 	public class ServerScopeAttribute : ScopeAttribute
 	{
-		public ServerScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod) : base(EntityType.Server, otherScope, defaultReceiveType) {}
+		public Type peerType;
+		
+		public ServerScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod)
+			: base(EntityType.Server, otherScope, defaultReceiveType) {}
+
+		public ServerScopeAttribute(Type otherScope, Type peerType, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod)
+			: base(EntityType.Server, otherScope, defaultReceiveType)
+		{
+			this.peerType = peerType;
+		}
 	}
 
 	public class ClientScopeAttribute : ScopeAttribute
 	{
-		public ClientScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod) : base(EntityType.Client, otherScope, defaultReceiveType) {}
+		public ClientScopeAttribute(Type otherScope, SignalReceiveType defaultReceiveType = SignalReceiveType.AbstractMethod)
+			: base(EntityType.Client, otherScope, defaultReceiveType) {}
 	}
 }
