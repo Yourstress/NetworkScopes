@@ -6,6 +6,9 @@ namespace NetworkScopes.Examples
 	[Generated]
 	public class MyServerMatch : MyServerMatch_Abstract
 	{
+		// custom properties
+		public string matchName;
+		
 		protected override void Test1()
 		{
 			Debug.Log($"Server received Test1");

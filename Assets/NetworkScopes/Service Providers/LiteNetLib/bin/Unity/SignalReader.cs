@@ -1,3 +1,4 @@
+
 using System;
 using LiteNetLib.Utils;
 
@@ -16,75 +17,24 @@ namespace NetworkScopes
         {
             this.reader = new NetDataReader(data);
         }
-
-        public short ReadShort()
-        {
-            return reader.GetShort();
-        }
-
-        public byte ReadByte()
-        {
-            return reader.GetByte();
-        }
-
-        public bool ReadBoolean()
-        {
-            return reader.GetBool();
-        }
-
-        public char ReadChar()
-        {
-            return reader.GetChar();
-        }
-
-        public ushort ReadUInt16()
-        {
-            return reader.GetUShort();
-        }
-
-        public short ReadInt16()
-        {
-            return reader.GetShort();
-        }
-
-        public long ReadInt64()
-        {
-            return reader.GetLong();
-        }
-
-        public ulong ReadUInt64()
-        {
-            return reader.GetULong();
-        }
-
-        public int ReadInt32()
-        {
-            return reader.GetInt();
-        }
-
-        public uint ReadUInt()
-        {
-            return reader.GetUInt();
-        }
-
-        public float ReadFloat()
-        {
-            return reader.GetFloat();
-        }
-
-        public double ReadDouble()
-        {
-            return reader.GetDouble();
-        }
-
-        public string ReadString()
-        {
-            return reader.GetString();
-        }
-
-        public DateTime ReadDateTime()
-        {
-            return DateTime.FromBinary(reader.GetLong());
-        }
+        
+        public bool ReadBoolean() => reader.GetBool();
+        public byte ReadByte() => reader.GetByte();
+        public byte[] ReadByteArray() => reader.GetBytesWithLength();
+        public sbyte ReadSByte() => reader.GetSByte();
+        public char ReadChar() => reader.GetChar();
+        public float ReadFloat() => reader.GetFloat();
+        public double ReadDouble() => reader.GetDouble();
+        
+        public short ReadInt16() => reader.GetShort();
+        public int ReadInt32() => reader.GetInt();
+        public long ReadInt64() => reader.GetLong();
+        public ushort ReadUInt16() => reader.GetUShort();
+        public uint ReadUInt32() => reader.GetUInt();
+        public ulong ReadUInt64() => reader.GetULong();
+        
+        public string ReadString() => reader.GetString();
+        
+        public DateTime ReadDateTime() => DateTime.FromBinary(reader.GetLong());
     }
 }

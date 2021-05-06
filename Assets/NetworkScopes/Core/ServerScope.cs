@@ -78,7 +78,7 @@ namespace NetworkScopes
 			isActive = true;
 		}
 
-		public void AddPeer(INetworkPeer peer)
+		public void AddPeer(INetworkPeer peer, bool sendEnterMessage)
 		{
 			if (peers.Contains(peer))
 				throw new Exception("Peer already exists in this scope.");
@@ -86,22 +86,23 @@ namespace NetworkScopes
 			peers.Add(peer);
 
 			// register to disconnect event to remove the peer from this scope when disconnected
-			peer.OnDisconnect += RemovePeer;
+			peer.OnDisconnect += OnPeerDisconnected;
 
 			// send entered event
-			ServerScopeUtility.SendEnterScopeMessage(peer, _signalProvider, this);
+			if (sendEnterMessage)
+				ServerScopeUtility.SendEnterScopeMessage(peer, _signalProvider, this);
 
 			// notify inheritor class of this peer's entry
 			OnPeerEntered(peer);
 		}
 
-		public void RemovePeer(INetworkPeer peer)
+		public void RemovePeer(INetworkPeer peer, bool sendExitMessage)
 		{
 			if (!peers.Remove(peer))
 				throw new Exception("Peer has not been added to this scope and cannot be removed.");
 
 			// unregister disconnect event upon removal of peer
-			peer.OnDisconnect -= RemovePeer;
+			peer.OnDisconnect -= OnPeerDisconnected;
 
 			// remove peer promises handler (if one exists)
 			peerPromiseHandlers.Remove(peer);
@@ -110,20 +111,30 @@ namespace NetworkScopes
 			OnPeerExited(peer);
 
 			// send exited event (only if the peer is still connected)
-			if (!peer.isDestroyed)
+			if (!peer.isDestroyed && sendExitMessage)
 			{
 				ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
 
 				if (fallbackScope != null)
-					fallbackScope.AddPeer(peer);
+					fallbackScope.AddPeer(peer, true);
 			}
 		}
 
-		public void RemoveAllPeers()
+		public void HandoverPeer(INetworkPeer peer, IServerScope targetScope)
 		{
-			// remove all peers in reverse order to avoid List element copying
-			for (var x = peers.Count - 1; x >= 0; x--)
-				RemovePeer(peers[x]);
+			// tell the peer about this handover
+			ServerScopeUtility.SendSwitcheScopeMessage(peer, _signalProvider, this, targetScope);
+
+			// remove peer from this scope
+			RemovePeer(peer, false);
+
+			// add peer to target scope
+			targetScope.AddPeer(peer, false);
+		}
+
+		void OnPeerDisconnected(INetworkPeer peer)
+		{
+			RemovePeer(peer, false);
 		}
 
 		NetworkPromiseHandler GetPromiseHandler(INetworkPeer peer)

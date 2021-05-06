@@ -25,7 +25,7 @@ namespace NetworkScopes
 		public abstract IReadOnlyCollection<TPeer> Peers { get; }
 		public int PeerCount { get; private set; }
 
-		public IServerScope defaultScope;
+		public IServerScope defaultScope { get; set; }
 
 		private readonly ChannelGenerator channelGenerator = new ChannelGenerator(short.MinValue, short.MaxValue);
 
@@ -35,18 +35,16 @@ namespace NetworkScopes
 			RegisterScope(newScope, scopeIdentifier);
 			return newScope;
 		}
-
-		public TServerScope RegisterScope<TServerScope>(TServerScope scope, byte scopeIdentifier) where TServerScope : IServerScope
+		
+		public void RegisterScope<TServerScope>(TServerScope scope, byte scopeIdentifier) where TServerScope : IServerScope
 		{
 			// TODO: instead of writing channel as first short in the packet, use LiteNetLib's channel option when sending
 			scope.InitializeServerScope(this, scopeIdentifier, channelGenerator);
-
+		
 			registeredScopes[scope.channel] = scope;
 			
 			if (defaultScope == null)
 				defaultScope = scope;
-
-			return scope;
 		}
 
 		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
@@ -67,7 +65,7 @@ namespace NetworkScopes
 				throw new Exception("Default scope is not yet set.");
 
 			// add the peer to the default scope
-			defaultScope.AddPeer(peer);
+			defaultScope.AddPeer(peer, true);
 		}
 
 		protected void PeerDisconnected(INetworkPeer peer)

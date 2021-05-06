@@ -4,13 +4,23 @@ namespace NetworkScopes
 {
 	public interface ISignalReader
 	{
-		string ReadString();
-		short ReadShort();
+		bool ReadBoolean();
 		byte ReadByte();
-		int ReadInt32();
-
+		byte[] ReadByteArray();
+		sbyte ReadSByte();
+		char ReadChar();
 		float ReadFloat();
-
+		double ReadDouble();
+		
+		short ReadInt16();
+		int ReadInt32();
+		long ReadInt64();
+		ushort ReadUInt16();
+		uint ReadUInt32();
+		ulong ReadUInt64();
+		
+		string ReadString();
+		
 		DateTime ReadDateTime();
 	}
 }

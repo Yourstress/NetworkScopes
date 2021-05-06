@@ -10,7 +10,7 @@ namespace NetworkScopes
 
         public static ScopeChannel ReadScopeChannel(this ISignalReader reader)
         {
-            return reader.ReadShort();
+            return reader.ReadInt16();
         }
 
         public static void WriteScopeChannel(this ISignalWriter writer, ScopeChannel channel)
@@ -46,6 +46,7 @@ namespace NetworkScopes
 
         #region Generic Objects
 
+        private const string _boolType = "Boolean";
         private const string _stringType = "String";
         private const string _shortType = "Int16";
         private const string _byteType = "Byte";
@@ -56,6 +57,9 @@ namespace NetworkScopes
             Type type = value.GetType();
             switch (type.Name)
             {
+                case _boolType:
+                    writer.Write((bool) value);
+                    break;
                 case _stringType:
                     writer.Write((string) value);
                     break;
@@ -83,10 +87,12 @@ namespace NetworkScopes
             Type type = typeof(T);
             switch (type.Name)
             {
+                case _boolType:
+                    return (T)(object)reader.ReadBoolean();
                 case _stringType:
                     return (T)(object)reader.ReadString();
                 case _shortType:
-                    return (T)(object)reader.ReadShort();
+                    return (T)(object)reader.ReadInt16();
                 case _byteType:
                     return (T)(object)reader.ReadByte();
                 case _int32Type:

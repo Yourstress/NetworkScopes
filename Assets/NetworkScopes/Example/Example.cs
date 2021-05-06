@@ -14,10 +14,29 @@ namespace NetworkScopes.Examples
             NetworkScopeProcessor.GenerateNetworkScopes(logOnly: false);
         }
         
+        private class Command
+        {
+            public string text;
+            public Action action;
+
+            public static implicit operator Command((string match, Action action) tuple)
+            {
+                return new Command()
+                {
+                    text = tuple.match,
+                    action = tuple.action
+                };
+            }
+        }
+        
         public static async Task TestNetworkScopes()
         {
             INetworkServer server = new LiteNetServer<MyPeer>();
-            MyServerMatch serverMatch = server.RegisterScope<MyServerMatch>(0);
+            MyServerLobby serverLobby = server.RegisterScope<MyServerLobby>(0);
+            MyServerMatch serverMatch = server.RegisterScope<MyServerMatch>(1);
+
+            // not explicitally needed - the first registered scope on the server is the default
+            server.defaultScope = serverLobby;
 
             server.StartListening(7979);
 
@@ -27,7 +46,9 @@ namespace NetworkScopes.Examples
             await Task.Delay(1000);
             
             NetworkClient client = NetworkClient.CreateLiteNetLibClient();
-            MyClientMatch clientMatch = client.RegisterScope<MyClientMatch>(0);
+            MyClientLobby clientLobby = client.RegisterScope<MyClientLobby>(0);
+            MyClientMatch clientMatch = client.RegisterScope<MyClientMatch>(1);
+            
 
             client.OnStateChanged += OnClientStateChanged;
             client.Connect("localhost", 7979);
@@ -56,30 +77,53 @@ namespace NetworkScopes.Examples
             // int value = await clientMatch.SendToServer.Test3().GetAsync();
             // Log($"Client <-- {value}");
 
+
+            Command[] lobbyCommands = new Command[]
+            {
+                ("Join match", () => clientLobby.SendToServer.JoinAnyMatch()),
+                ("Join any match (promise)", () => clientLobby.SendToServer.JoinMatch(false)),
+                ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
+            };
+            
+            Command[] matchCommands = new Command[]
+            {
+                ("Test1", () => clientMatch.SendToServer.Test1()),
+                ("Test2", () => clientMatch.SendToServer.Test2("str")),
+                ("Test3", () => clientMatch.SendToServer.Test3()),
+                ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
+            };
+
             while (true)
             {
-                string line = Console.ReadLine();
+                if (clientLobby.isActive)
+                    DrawCommands(lobbyCommands);
+                else if (clientMatch.isActive)
+                    DrawCommands(matchCommands);
+                else
+                    await Task.Delay(100);
 
-                switch (line)
+
+                void DrawCommands(Command[] commands)
                 {
-                    case "0":
-                        NetworkScopeProcessor.GenerateNetworkScopes(false);
-                        Environment.Exit(0);
-                        break;
-                    case "1":
-                        clientMatch.SendToServer.Test1();
-                        break;
-                    case "2":
-                        clientMatch.SendToServer.Test2("str");
-                        break;
-                    case "3":
-                        Stopwatch sw = new Stopwatch();
-                        sw.Start();
-                        await clientMatch.SendToServer.Test3().GetAsync();
-                        sw.Stop();
-                        
-                        Console.WriteLine($"Took {sw.ElapsedMilliseconds}ms");
-                        break;
+                    Console.WriteLine("Available commands: ");
+                    int num = 1;
+                    foreach (Command command in commands)
+                        Console.WriteLine($" [{num++}] {command.text}");
+                    
+                    Console.WriteLine($"Choose a command: ");
+                    
+                    string line = Console.ReadLine();
+
+                    if (!int.TryParse(line, out num) || num < 1 || num > commands.Length)
+                    {
+                        Console.WriteLine("Invalid command.");
+                        Console.WriteLine();
+                        DrawCommands(commands);
+                        return;
+                    }
+
+                    Command cmd = commands[num - 1];
+                    cmd.action();
                 }
             }
         }

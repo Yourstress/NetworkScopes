@@ -1,7 +1,9 @@
 namespace NetworkScopes
 {
 	public interface INetworkServer : IServerProvider, IServerScopeProvider
-	{ }
+	{
+		public IServerScope defaultScope { get; set; }
+	}
 	public interface INetworkClient : IClientProvider, IScopeRegistrar
 	{ }
 	
@@ -23,6 +25,7 @@ namespace NetworkScopes
 	public interface IScopeRegistrar
 	{
 		TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new();
+		void RegisterScope<TServerScope>(TServerScope newScope, byte scopeIdentifier) where TServerScope : IServerScope;
 		void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope;
 	}
 

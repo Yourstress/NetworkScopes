@@ -234,19 +234,22 @@ namespace NetworkScopes.CodeGeneration
 //				receiver.Body.AddMethodCall("writer", "WritePromiseIDFromReader", "reader");
 
 			MethodBody body = receiver.Body;
-
+			
 			// use to store the parameters that make up each read command (per method)
 			List<string> tempParamNames = new List<string>();
 
-			foreach (ParameterInfo param in method.GetParameters())
+			// method parameters (only for signals, not promises)
+			if (!isPromiseSignal)
 			{
-				serializer.AddDeserializationCommands(body, param.Name, param.ParameterType);
-				tempParamNames.Add(param.Name);
+				foreach (ParameterInfo param in method.GetParameters())
+				{
+					serializer.AddDeserializationCommands(body, param.Name, param.ParameterType);
+					tempParamNames.Add(param.Name);
+				}
 			}
 
 			// call receiving method
 			string[] paramsStr = tempParamNames.ToArray();
-
 
 			if (isEventRaisingScope && !mustSendResponse)
 				body.AddLocalMethodCall("On"+method.Name, paramsStr);
