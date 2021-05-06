@@ -1,4 +1,4 @@
-using NetworkScopes.Examples;
+
 using System;
 
 namespace NetworkScopes.Examples
@@ -8,17 +8,19 @@ namespace NetworkScopes.Examples
 	{
 		protected override void Test1()
 		{
-			throw new System.NotImplementedException();
+			Debug.Log($"Server received Test1");
 		}
 
 		protected override void Test2(string str)
 		{
-			throw new System.NotImplementedException();
+			Debug.Log($"Server received Test2 " + str);
 		}
 
 		protected override int Test3()
 		{
-			throw new System.NotImplementedException();
+			int value = (new Random().Next() % 100) + 1;
+			Debug.Log($"Server received Test3 - sending back random number between 1-100: " + value);
+			return value;
 		}
 
 	}
