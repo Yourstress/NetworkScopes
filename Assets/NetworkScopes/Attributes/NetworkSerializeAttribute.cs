@@ -19,4 +19,16 @@ namespace NetworkScopes
 			this.serializeType = serializeType;
 		}
 	}
+	
+	public class NetworkPropertyAttribute : Attribute
+	{
+		public int order;
+		public int lineNumber;
+
+		public NetworkPropertyAttribute(int order = 0, [CallerLineNumber] int lineNumber = 0)
+		{
+			this.order = order;
+			this.lineNumber = lineNumber;
+		}
+	}
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 #if UNITY_EDITOR
@@ -294,7 +295,14 @@ namespace NetworkScopes.CodeGeneration
 				ClassDefinition typeSerializerDef = CreateTypeSerializerClass(serializableType);
 
 				string path = GetTypeSerializerClassPath(serializableType);
-				File.WriteAllText(path, typeSerializerDef.ToScriptWriter().ToString());
+
+				string newContent = typeSerializerDef.ToScriptWriter().ToString();
+				
+				// if file already exists, don't write, and add a helpful log message
+				if (File.Exists(path) && File.ReadAllText(path) != newContent)
+					Debug.Log($"Detected a serialization change in {serializableType.Name} and will not generate serializer. Delete the file '{path}' and try again to re-generate it.");
+				else
+					File.WriteAllText(path, newContent);
 			}
 		}
 
@@ -306,26 +314,24 @@ namespace NetworkScopes.CodeGeneration
 
 			typeSerializer.interfaces.Add(typeof(ISerializable));
 
-			MemberInfo[] membersToSerialize = GetSerializationMembers(serializableType);
+			SerializedMember[] serializeMembers = GetSerializationMembers(serializableType);
 
 			// create WRITER method
 			MethodDefinition writerMethod = new MethodDefinition("Serialize");
 			writerMethod.Parameters.Add(new ParameterDefinition("writer", typeof(ISignalWriter)));
 
-			foreach (MemberInfo member in membersToSerialize)
+			foreach (SerializedMember member in serializeMembers)
 			{
-				Type type = ((member is FieldInfo) ? ((FieldInfo) member).FieldType : ((PropertyInfo)member).PropertyType);
-				AddSerializationCommands(writerMethod.Body, member.Name, type);
+				AddSerializationCommands(writerMethod.Body, member.name, member.type);
 			}
 
 			// create READER method
 			MethodDefinition readerMethod = new MethodDefinition("Deserialize");
 			readerMethod.Parameters.Add(new ParameterDefinition("reader", typeof(ISignalReader)));
 
-			foreach (MemberInfo member in membersToSerialize)
+			foreach (SerializedMember member in serializeMembers)
 			{
-				Type type = ((member is FieldInfo) ? ((FieldInfo) member).FieldType : ((PropertyInfo)member).PropertyType);
-				AddDeserializationCommands(readerMethod.Body, member.Name, type, DeserializationOptions.DontAllocateVariable);
+				AddDeserializationCommands(readerMethod.Body, member.name, member.type, DeserializationOptions.DontAllocateVariable);
 			}
 
 			typeSerializer.methods.Add(writerMethod);
@@ -334,13 +340,23 @@ namespace NetworkScopes.CodeGeneration
 			return typeSerializer;
 		}
 
-		private static MemberInfo[] GetSerializationMembers(Type serializableTypes)
+		private static SerializedMember[] GetSerializationMembers(Type serializableType)
 		{
-			List<MemberInfo> members = new List<MemberInfo>();
-
-			members.AddRange(serializableTypes.GetFields());
-			members.AddRange(serializableTypes.GetProperties());
-
+			List<SerializedMember> members = new List<SerializedMember>();
+			
+			// get all fields and properties
+			members.AddRange(serializableType.GetFields().Select(f => new SerializedMember(f)));
+			members.AddRange(serializableType.GetProperties().Select(f => new SerializedMember(f)));
+			
+			
+			
+			// sort and return them
+			members = members
+				.OrderBy(p => p.serializeAttribute == null)
+				.ThenBy(p => p.serializeAttribute?.order)
+				.ThenBy(p => p.serializeAttribute?.lineNumber)
+				.ToList();
+			
 			return members.ToArray();
 		}
 
@@ -350,5 +366,29 @@ namespace NetworkScopes.CodeGeneration
 
 			return TypeDefinition.MakeGenericType(mainPromiseType, type.GetReadableName());
 		}
+	}
+
+	public class SerializedMember
+	{
+		readonly FieldInfo _field;
+		readonly PropertyInfo _property;
+		public readonly NetworkPropertyAttribute serializeAttribute;
+
+		public Type type => _field?.FieldType ?? _property.PropertyType;
+		public string name => _field?.Name ?? _property.Name;
+
+		private SerializedMember(FieldInfo field, PropertyInfo prop)
+		{
+			_field = field;
+			_property = prop;
+
+			MemberInfo member = field != null ? field : prop;
+			
+			serializeAttribute = member.GetCustomAttribute<NetworkPropertyAttribute>();
+		}
+
+		public SerializedMember(FieldInfo field) : this(field, null) {}
+		
+		public SerializedMember(PropertyInfo property) : this(null, property) {}
 	}
 }

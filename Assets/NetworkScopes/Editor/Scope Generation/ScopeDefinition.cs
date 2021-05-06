@@ -121,8 +121,9 @@ namespace NetworkScopes.CodeGeneration
 					senderMethod.Body.AddAssignmentInstruction(promiseType, "promise", string.Format("new {0}()", promiseType.Name));
 
 					// then call CreatePromiseSignal
-					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter), "writer",
-						string.Format("CreatePromiseSignal({0}, promise /*hash '{1}'*/)", method.Name.GetConsistentHashCode(), method.Name));
+					senderMethod.Body.AddAssignmentInstruction(typeof(ISignalWriter),
+						"writer",
+						$"CreatePromiseSignal({method.Name.GetConsistentHashCode()}, promise /*hash '{method.Name}'*/)");
 
 					// finally, make sure the method returns a promise type
 					senderMethod.ReturnType = promiseType;
