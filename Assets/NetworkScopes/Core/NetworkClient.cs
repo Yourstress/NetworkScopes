@@ -35,7 +35,7 @@ namespace NetworkScopes
 		protected abstract void DisconnectInternal();
 
 		// IClientSignalProvider
-		public abstract ISignalWriter CreateSignal(short scopeChannel);
+		public abstract ISignalWriter CreateSignal(short channelId);
 		public abstract void SendSignal(ISignalWriter signal);
 		
 		// Other

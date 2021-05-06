@@ -44,9 +44,9 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
             _netServer?.Stop();
         }
 
-        public override ISignalWriter CreateSignal(short scopeIdentifier)
+        public override ISignalWriter CreateSignal(short channelId)
         {
-            return new SignalWriter(scopeIdentifier);
+            return new SignalWriter(channelId);
         }
 
         public override void SendSignal(PeerTarget target, ISignalWriter writer)

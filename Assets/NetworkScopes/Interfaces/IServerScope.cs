@@ -3,9 +3,9 @@ namespace NetworkScopes
 	public interface IServerScope : IBaseScope
 	{
 		ScopeIdentifier scopeIdentifier { get; }
-		ScopeChannel currentChannel { get; }
+		ScopeChannel channel { get; }
 
-		void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel);
+		void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier serverScopeIdentifier, ShortGenerator channelGenerator);
 
 		void AddPeer(INetworkPeer peer);
 		void RemovePeer(INetworkPeer peer);

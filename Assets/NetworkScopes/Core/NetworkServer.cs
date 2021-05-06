@@ -14,7 +14,7 @@ namespace NetworkScopes
 		public abstract void StopListening();
 
 		// IServerSignalProvider
-		public abstract ISignalWriter CreateSignal(short scopeIdentifier);
+		public abstract ISignalWriter CreateSignal(short channelId);
 		public abstract void SendSignal(PeerTarget target, ISignalWriter writer);
 
 		public event Action<INetworkPeer> OnPeerConnected = delegate { };
@@ -27,7 +27,7 @@ namespace NetworkScopes
 
 		public IServerScope defaultScope;
 
-		private ShortGenerator channelGenerator = new ShortGenerator(short.MinValue, short.MaxValue);
+		private readonly ShortGenerator channelGenerator = new ShortGenerator(short.MinValue, short.MaxValue);
 
 		public NetworkServer()
 		{
@@ -44,12 +44,10 @@ namespace NetworkScopes
 
 		public TServerScope RegisterScope<TServerScope>(TServerScope scope, byte scopeIdentifier) where TServerScope : IServerScope
 		{
-			ScopeChannel channel = channelGenerator.AllocateValue();
+			// TODO: instead of writing channel as first short in the packet, use LiteNetLib's channel option when sending
+			scope.InitializeServerScope(this, scopeIdentifier, channelGenerator);
 
-			// TODO: create channel for each registered scope -- channel hard coded to 0!!
-			scope.InitializeServerScope(this, scopeIdentifier, channel);
-
-			registeredScopes[channel] = scope;
+			registeredScopes[scope.channel] = scope;
 			
 			if (defaultScope == null)
 				defaultScope = scope;
@@ -59,9 +57,9 @@ namespace NetworkScopes
 
 		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
 		{
-			channelGenerator.DeallocateValue(scope.currentChannel);
+			channelGenerator.DeallocateValue(scope.channel);
 
-			if (!registeredScopes.Remove(scope.currentChannel))
+			if (!registeredScopes.Remove(scope.channel))
 				throw new Exception(string.Format("The scope {0} is not registered.", scope));
 		}
 
@@ -90,10 +88,9 @@ namespace NetworkScopes
 		protected void ProcessSignal(ISignalReader signal, INetworkPeer sender)
 		{
 			ScopeChannel targetChannel = signal.ReadScopeChannel();
-			IServerScope targetScope;
 
 			// in order to receive a signal, the receiving scope must be active (got an Entered Scope system message).
-			if (registeredScopes.TryGetValue(targetChannel, out targetScope))
+			if (registeredScopes.TryGetValue(targetChannel, out IServerScope targetScope))
 			{
 				targetScope.ProcessSignal(signal, sender);
 			}

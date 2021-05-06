@@ -24,8 +24,8 @@ namespace NetworkScopes
 		}
 	}
 	
-	public abstract class ServerScope<TScopeSender> : IServerScope
-		where TScopeSender : IScopeSender 
+	public abstract class ServerScope<TScopeSender> : IServerScope, IDisposable
+		where TScopeSender : IScopeSender
 	{
 		public string name { get { return GetType().Name; } }
 		public bool isActive { get; private set; }
@@ -39,7 +39,7 @@ namespace NetworkScopes
 		public List<INetworkPeer> peers { get; private set; }
 
 		public ScopeIdentifier scopeIdentifier { get; private set; }
-		public ScopeChannel currentChannel { get; private set; }
+		public ScopeChannel channel { get; private set; }
 
 		/// <summary>
 		/// The scope to hand over the peers to when removed from this scope.
@@ -53,16 +53,24 @@ namespace NetworkScopes
 		// stores NetworkPromise objects awaiting peer responses
 		private readonly Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
 
+		private ShortGenerator _channelGenerator;
+
 		protected ServerScope()
 		{
 			peers = new List<INetworkPeer>();
 		}
 
-		public void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier scopeIdentifier, ScopeChannel scopeChannel)
+		void IDisposable.Dispose()
 		{
-			this.scopeRegistrar = scopeProvider;
-			this.scopeIdentifier = scopeIdentifier;
-			this.currentChannel = scopeChannel;
+			_channelGenerator.DeallocateValue(channel);
+		}
+
+		public void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier serverScopeIdentifier, ShortGenerator channelGenerator)
+		{
+			scopeRegistrar = scopeProvider;
+			scopeIdentifier = serverScopeIdentifier;
+			channel = channelGenerator.AllocateValue();
+			_channelGenerator = channelGenerator;
 			_signalProvider = scopeProvider;
 
 			SignalMethodBinder.BindScope(this);
@@ -171,7 +179,7 @@ namespace NetworkScopes
 		protected ISignalWriter CreateSignal(int signalID)
 		{
 			// return writer based on the current network medium (service provider)
-			ISignalWriter signal = _signalProvider.CreateSignal(currentChannel);
+			ISignalWriter signal = _signalProvider.CreateSignal(channel);
 			signal.Write(signalID);
 			return signal;
 		}

@@ -45,9 +45,9 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
             _netClient.DisconnectAll();
         }
 
-        public override ISignalWriter CreateSignal(short scopeChannel)
+        public override ISignalWriter CreateSignal(short channelId)
         {
-            return new SignalWriter(scopeChannel);
+            return new SignalWriter(channelId);
         }
 
         public override void SendSignal(ISignalWriter signal)

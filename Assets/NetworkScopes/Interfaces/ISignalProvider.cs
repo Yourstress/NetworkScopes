@@ -7,7 +7,7 @@ namespace NetworkScopes
 	
 	public interface ISignalProvider
 	{
-		ISignalWriter CreateSignal(short scopeChannel);
+		ISignalWriter CreateSignal(short channelId);
 	}
 
 	public interface IClientSignalProvider : ISignalProvider

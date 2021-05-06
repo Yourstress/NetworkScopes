@@ -12,9 +12,9 @@ namespace NetworkScopes
             
         }
         
-        public SignalWriter(short scopeIdentifier) : base(true)
+        public SignalWriter(short channelId) : base(true)
         {
-            Write(scopeIdentifier);
+            Write(channelId);
         }
         
         public void Write(bool value)
