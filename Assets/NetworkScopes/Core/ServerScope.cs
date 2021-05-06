@@ -161,6 +161,13 @@ namespace NetworkScopes
 			return GetScopeSender();
 		}
 
+		public TScopeSender SendToAllExcept(INetworkPeer peer)
+		{
+			peerTarget.TargetPeerGroup = peers;
+			peerTarget.TargetPeerGroupException = peer;
+			return GetScopeSender();
+		}
+
 		protected ISignalWriter CreateSignal(int signalID)
 		{
 			// return writer based on the current network medium (service provider)

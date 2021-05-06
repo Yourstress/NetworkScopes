@@ -59,7 +59,8 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
             {
                 foreach (INetworkPeer peer in target.TargetPeerGroup)
                 {
-                    peer.SendSignal(writer);
+                    if (peer != target.TargetPeerGroupException)
+                        peer.SendSignal(writer);
                 }
             }
         }

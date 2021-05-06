@@ -19,6 +19,7 @@ namespace NetworkScopes
 			{
 				_targetPeer = value;
 				_targetGroup = null;
+				TargetPeerGroupException = null;
 			}
 		}
 
@@ -29,7 +30,10 @@ namespace NetworkScopes
 			{
 				_targetPeer = null;
 				_targetGroup = value;
+				TargetPeerGroupException = null;
 			}
 		}
+
+		public INetworkPeer TargetPeerGroupException;
 	}
 }
