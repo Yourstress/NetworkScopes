@@ -4,6 +4,8 @@ namespace NetworkScopes
 	{
 		ScopeIdentifier scopeIdentifier { get; }
 		ScopeChannel channel { get; }
+		
+		IServerScope fallbackScope { get; }
 
 		void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier serverScopeIdentifier, ChannelGenerator channelGenerator);
 

@@ -44,7 +44,7 @@ namespace NetworkScopes
 		/// <summary>
 		/// The scope to hand over the peers to when removed from this scope.
 		/// </summary>
-		public IServerScope fallbackScope;
+		public IServerScope fallbackScope { get; set; }
 
 		protected INetworkPeer SenderPeer { get; private set; }
 
@@ -223,6 +223,10 @@ namespace NetworkScopes
 
 		void IServerScope.ProcessSignal(ISignalReader signal, INetworkPeer peer)
 		{
+			// ignore messges from unregistered peers
+			if (!peers.Contains(peer))
+				return;
+			
 			// assign the sender before dispatching the call to the scope's parent class
 			SenderPeer = peer;
 
