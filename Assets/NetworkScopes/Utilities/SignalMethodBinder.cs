@@ -29,7 +29,7 @@ namespace NetworkScopes
 				else
 					Debug.LogError($"Failed to call unbound method in {rootObject.GetType().Name}");
 
-				Debug.LogException(e);
+				Debug.LogException(e.InnerException ?? e);
 			}
 		}
 	}
