@@ -32,6 +32,7 @@ namespace NetworkScopes.Examples
 		protected abstract void Test1();
 		protected abstract void Test2(string str);
 		protected abstract int Test3();
+		protected abstract void LeaveMatch();
 		protected void ReceiveSignal_Test1(ISignalReader reader)
 		{
 			Test1();
@@ -51,6 +52,11 @@ namespace NetworkScopes.Examples
 			writer.Write(promiseID);
 			writer.Write(promiseValue);
 			SendSignal(writer, SenderPeer);
+		}
+
+		protected void ReceiveSignal_LeaveMatch(ISignalReader reader)
+		{
+			LeaveMatch();
 		}
 
 	}

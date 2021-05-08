@@ -10,6 +10,7 @@ namespace NetworkScopes.Examples
 			void Test1();
 			void Test2(string str);
 			ValuePromise<int> Test3();
+			void LeaveMatch();
 		}
 
 		protected override ISender GetScopeSender()
@@ -36,6 +37,12 @@ namespace NetworkScopes.Examples
 			ISignalWriter writer = CreatePromiseSignal(-439286700, promise /*hash 'Test3'*/);
 			SendSignal(writer);
 			return promise;
+		}
+
+		void ISender.LeaveMatch()
+		{
+			ISignalWriter writer = CreateSignal(819672850 /*hash 'LeaveMatch'*/);
+			SendSignal(writer);
 		}
 
 		protected abstract void Test1();

@@ -6,7 +6,7 @@ namespace NetworkScopes.Examples
 	[Generated]
 	public class MyServerLobby : MyServerLobby_Abstract
 	{
-		private readonly List<MyServerMatch> matches = new();
+		public readonly List<MyServerMatch> matches = new();
 		
 		protected override void JoinAnyMatch()
 		{
@@ -26,9 +26,17 @@ namespace NetworkScopes.Examples
 		private MyServerMatch CreateNewMatch()
 		{
 			MyServerMatch match = scopeRegistrar.RegisterScope<MyServerMatch>(1);
+			match.fallbackScope = this;
+			match.OnMatchDestroyed += DestroyMatch;
 			matches.Add(match);
 			return match;
 		}
 
+		private void DestroyMatch(MyServerMatch match)
+		{
+			match.OnMatchDestroyed -= DestroyMatch;
+
+			matches.Remove(match);
+		}
 	}
 }

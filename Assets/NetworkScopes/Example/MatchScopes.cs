@@ -13,5 +13,7 @@ namespace NetworkScopes.Examples
         void Test1();
         void Test2(string str);
         int Test3();
+        
+        void LeaveMatch();
     }
 }

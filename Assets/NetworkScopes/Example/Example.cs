@@ -33,7 +33,6 @@ namespace NetworkScopes.Examples
         {
             INetworkServer server = new LiteNetServer<MyPeer>();
             MyServerLobby serverLobby = server.RegisterScope<MyServerLobby>(0);
-            MyServerMatch serverMatch = server.RegisterScope<MyServerMatch>(1);
 
             // not explicitally needed - the first registered scope on the server is the default
             server.defaultScope = serverLobby;
@@ -77,30 +76,35 @@ namespace NetworkScopes.Examples
             // int value = await clientMatch.SendToServer.Test3().GetAsync();
             // Log($"Client <-- {value}");
 
-
-            Command[] lobbyCommands = new Command[]
-            {
-                ("Join match", () => clientLobby.SendToServer.JoinAnyMatch()),
-                ("Join any match (promise)", () => clientLobby.SendToServer.JoinMatch(false)),
-                ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
-            };
-            
-            Command[] matchCommands = new Command[]
-            {
-                ("Test1", () => clientMatch.SendToServer.Test1()),
-                ("Test2", () => clientMatch.SendToServer.Test2("str")),
-                ("Test3", () => clientMatch.SendToServer.Test3()),
-                ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
-            };
-
             while (true)
             {
-                if (clientLobby.isActive)
-                    DrawCommands(lobbyCommands);
-                else if (clientMatch.isActive)
-                    DrawCommands(matchCommands);
-                else
-                    await Task.Delay(100);
+                await DrawGlobalCommands();
+                
+                Task DrawGlobalCommands()
+                {
+                    Command[] lobbyCommands = new Command[]
+                    {
+                        ($"Join match ({serverLobby.matches.Count} running)", () => clientLobby.SendToServer.JoinAnyMatch()),
+                        ("Join any match (promise)", () => clientLobby.SendToServer.JoinMatch(false)),
+                        ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
+                    };
+            
+                    Command[] matchCommands = new Command[]
+                    {
+                        ("Test1", () => clientMatch.SendToServer.Test1()),
+                        ("Test2", () => clientMatch.SendToServer.Test2("str")),
+                        ("Test3", () => clientMatch.SendToServer.Test3()),
+                        ("LeaveMatch", () => clientMatch.SendToServer.LeaveMatch()),
+                        ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
+                    };
+                    
+                    if (clientLobby.isActive)
+                        DrawCommands(lobbyCommands);
+                    else if (clientMatch.isActive)
+                        DrawCommands(matchCommands);
+                    
+                    return Task.Delay(200);
+                }
 
 
                 void DrawCommands(Command[] commands)
@@ -110,7 +114,7 @@ namespace NetworkScopes.Examples
                     foreach (Command command in commands)
                         Console.WriteLine($" [{num++}] {command.text}");
                     
-                    Console.WriteLine($"Choose a command: ");
+                    Console.Write($"Choose a command: ");
                     
                     string line = Console.ReadLine();
 
@@ -118,7 +122,6 @@ namespace NetworkScopes.Examples
                     {
                         Console.WriteLine("Invalid command.");
                         Console.WriteLine();
-                        DrawCommands(commands);
                         return;
                     }
 

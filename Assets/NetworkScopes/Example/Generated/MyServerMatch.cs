@@ -8,7 +8,15 @@ namespace NetworkScopes.Examples
 	{
 		// custom properties
 		public string matchName;
-		
+
+		public event Action<MyServerMatch> OnMatchDestroyed = delegate {};
+
+		protected override void OnPeerExited(INetworkPeer peer)
+		{
+			if (peers.Count == 0)
+				DestroyScope();
+		}
+
 		protected override void Test1()
 		{
 			Debug.Log($"Server received Test1");
@@ -26,5 +34,15 @@ namespace NetworkScopes.Examples
 			return value;
 		}
 
+		protected override void LeaveMatch()
+		{
+			RemovePeer(SenderPeer, true);
+		}
+
+		void DestroyScope()
+		{
+			scopeRegistrar.UnregisterScope(this);
+			OnMatchDestroyed(this);
+		}
 	}
 }
