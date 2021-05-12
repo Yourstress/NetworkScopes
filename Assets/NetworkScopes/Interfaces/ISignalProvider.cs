@@ -1,8 +1,18 @@
+
+using System;
+using System.Collections.Generic;
+
 namespace NetworkScopes
 {
+	public interface INetworkServer<out TPeer> : INetworkServer where TPeer : INetworkPeer
+	{
+		IReadOnlyCollection<TPeer> Peers { get; }
+		TPeer FindPeer(Func<TPeer, bool> peerSelector);
+	}
+
 	public interface INetworkServer : IServerProvider, IServerScopeProvider
 	{
-		public IServerScope defaultScope { get; set; }
+		IServerScope defaultScope { get; set; }
 	}
 	public interface INetworkClient : IClientProvider, IScopeRegistrar
 	{ }
@@ -25,12 +35,11 @@ namespace NetworkScopes
 	public interface IScopeRegistrar
 	{
 		TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new();
-		void RegisterScope<TServerScope>(TServerScope newScope, byte scopeIdentifier) where TServerScope : IServerScope;
+		TServerScope RegisterScope<TServerScope>(TServerScope newScope, byte scopeIdentifier) where TServerScope : IServerScope;
 		void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope;
 	}
 
 	public interface IServerScopeProvider : IScopeRegistrar, IServerSignalProvider
 	{
-
 	}
 }

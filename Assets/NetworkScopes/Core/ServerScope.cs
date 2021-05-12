@@ -8,7 +8,15 @@ namespace NetworkScopes
 		where TScopeSender : IScopeSender
 		where TPeer : INetworkPeer
 	{
+		protected new INetworkServer<TPeer> server;
+		
 		protected new TPeer SenderPeer => (TPeer)base.SenderPeer;
+
+		public override void InitializeServerScope(INetworkServer networkServer, ScopeIdentifier serverScopeIdentifier, ChannelGenerator channelGenerator)
+		{
+			base.InitializeServerScope(networkServer, serverScopeIdentifier, channelGenerator);
+			server = base.server as INetworkServer<TPeer>;
+		}
 
 		protected virtual void OnPeerEntered(TPeer peer) {}
 		protected virtual void OnPeerExited(TPeer peer) {}
@@ -22,21 +30,34 @@ namespace NetworkScopes
 		{
 			OnPeerExited((TPeer)peer);
 		}
+
+		public TPeer FindPeer(Func<TPeer, bool> findFunc)
+		{
+			for (int x = 0; x < peers.Count; x++)
+			{
+				TPeer peer = (TPeer)peers[x];
+				if (findFunc(peer))
+					return peer;
+			}
+
+			return default;
+		}
+
+		public TPeer FindPeerInAnyScope(Func<TPeer, bool> findFunc) => server.FindPeer(findFunc);
 	}
 	
-	public abstract class ServerScope<TScopeSender> : IServerScope, IDisposable
+	public abstract class ServerScope<TScopeSender> : IServerScope
 		where TScopeSender : IScopeSender
 	{
 		public string name { get { return GetType().Name; } }
-		public bool isActive { get; private set; }
+		public bool IsActive { get; private set; }
 
 		protected abstract TScopeSender GetScopeSender();
 
-		private IServerSignalProvider _signalProvider;
-
 		protected readonly PeerTarget peerTarget = new PeerTarget();
 
-		public List<INetworkPeer> peers { get; private set; }
+		protected readonly List<INetworkPeer> peers = new List<INetworkPeer>();
+		public IReadOnlyList<INetworkPeer> Peers => peers;
 
 		public ScopeIdentifier scopeIdentifier { get; private set; }
 		public ScopeChannel channel { get; private set; }
@@ -47,38 +68,32 @@ namespace NetworkScopes
 		public IServerScope fallbackScope { get; set; }
 
 		protected INetworkPeer SenderPeer { get; private set; }
-
-		public IScopeRegistrar scopeRegistrar { get; private set; }
+		
+		protected INetworkServer server;
 
 		// stores NetworkPromise objects awaiting peer responses
 		private readonly Dictionary<INetworkPeer, NetworkPromiseHandler> peerPromiseHandlers = new Dictionary<INetworkPeer, NetworkPromiseHandler>();
 
 		private ChannelGenerator _channelGenerator;
 
-		protected ServerScope()
+		public virtual void InitializeServerScope(INetworkServer networkServer, ScopeIdentifier serverScopeIdentifier, ChannelGenerator channelGenerator)
 		{
-			peers = new List<INetworkPeer>();
-		}
+			server = networkServer;
+			scopeIdentifier = serverScopeIdentifier;
+			channel = channelGenerator.AllocateValue();
+			_channelGenerator = channelGenerator;
 
+			SignalMethodBinder.BindScope(this);
+
+			IsActive = true;
+		}
+		
 		void IDisposable.Dispose()
 		{
 			_channelGenerator.DeallocateValue(channel);
 		}
 
-		public void InitializeServerScope(IServerScopeProvider scopeProvider, ScopeIdentifier serverScopeIdentifier, ChannelGenerator channelGenerator)
-		{
-			scopeRegistrar = scopeProvider;
-			scopeIdentifier = serverScopeIdentifier;
-			channel = channelGenerator.AllocateValue();
-			_channelGenerator = channelGenerator;
-			_signalProvider = scopeProvider;
-
-			SignalMethodBinder.BindScope(this);
-
-			isActive = true;
-		}
-
-		public void AddPeer(INetworkPeer peer, bool sendEnterMessage)
+		public virtual void AddPeer(INetworkPeer peer, bool sendEnterMessage)
 		{
 			if (peers.Contains(peer))
 				throw new Exception("Peer already exists in this scope.");
@@ -90,13 +105,13 @@ namespace NetworkScopes
 
 			// send entered event
 			if (sendEnterMessage)
-				ServerScopeUtility.SendEnterScopeMessage(peer, _signalProvider, this);
+				ServerScopeUtility.SendEnterScopeMessage(peer, server, this);
 
 			// notify inheritor class of this peer's entry
 			OnPeerEntered(peer);
 		}
 
-		public void RemovePeer(INetworkPeer peer, bool sendExitMessage)
+		public virtual void RemovePeer(INetworkPeer peer, bool sendExitMessage)
 		{
 			if (!peers.Remove(peer))
 				throw new Exception("Peer has not been added to this scope and cannot be removed.");
@@ -111,9 +126,9 @@ namespace NetworkScopes
 			OnPeerExited(peer);
 
 			// send exited event (only if the peer is still connected)
-			if (!peer.isDestroyed && sendExitMessage)
+			if (!peer.IsDestroyed && sendExitMessage)
 			{
-				ServerScopeUtility.SendExitScopeMessage(peer, _signalProvider, this);
+				ServerScopeUtility.SendExitScopeMessage(peer, server, this);
 
 				if (fallbackScope != null)
 					fallbackScope.AddPeer(peer, true);
@@ -123,7 +138,7 @@ namespace NetworkScopes
 		public void HandoverPeer(INetworkPeer peer, IServerScope targetScope)
 		{
 			// tell the peer about this handover
-			ServerScopeUtility.SendSwitcheScopeMessage(peer, _signalProvider, this, targetScope);
+			ServerScopeUtility.SendSwitcheScopeMessage(peer, server, this, targetScope);
 
 			// remove peer from this scope
 			RemovePeer(peer, false);
@@ -132,7 +147,7 @@ namespace NetworkScopes
 			targetScope.AddPeer(peer, false);
 		}
 
-		void OnPeerDisconnected(INetworkPeer peer)
+		protected virtual void OnPeerDisconnected(INetworkPeer peer)
 		{
 			RemovePeer(peer, false);
 		}
@@ -190,7 +205,7 @@ namespace NetworkScopes
 		protected ISignalWriter CreateSignal(int signalID)
 		{
 			// return writer based on the current network medium (service provider)
-			ISignalWriter signal = _signalProvider.CreateSignal(channel);
+			ISignalWriter signal = server.CreateSignal(channel);
 			signal.Write(signalID);
 			return signal;
 		}
@@ -211,7 +226,7 @@ namespace NetworkScopes
 		protected void SendSignal(ISignalWriter signal)
 		{
 			// TODO: send out the signal using the service provider
-			_signalProvider.SendSignal(peerTarget, signal);
+			server.SendSignal(peerTarget, signal);
 		}
 
 		protected void ReceivePromise(ISignalReader reader)

@@ -25,11 +25,11 @@ namespace NetworkScopes
 			catch (Exception e)
 			{
 				if (method != null)
-					Debug.LogError($"Failed to call method {method.DeclaringType.Name}.{method.Name}");
+					NSDebug.LogError($"Failed to call method {method.DeclaringType.Name}.{method.Name}");
 				else
-					Debug.LogError($"Failed to call unbound method in {rootObject.GetType().Name}");
+					NSDebug.LogError($"Failed to call unbound method in {rootObject.GetType().Name}");
 
-				Debug.LogException(e.InnerException ?? e);
+				NSDebug.LogException(e);
 			}
 		}
 	}
@@ -72,23 +72,24 @@ namespace NetworkScopes
 
 		public static void BindScope(IServerScope serverScope)
 		{
-			BindScopeInternal(serverScope.GetType(), typeof(ServerScope<,>));
+			BindScopeInternal(serverScope.GetType());
 		}
 
 		public static void BindScope(IClientScope clientScope)
 		{
-			BindScopeInternal(clientScope.GetType(), typeof(ClientScope<>));
+			BindScopeInternal(clientScope.GetType());
 		}
 
-		private static void BindScopeInternal(Type scopeType, Type requiredBaseType)
+		private static void BindScopeInternal(Type scopeType)
 		{
-			Type scopeParentType = scopeType;
-			while (scopeParentType.BaseType != null && (!scopeParentType.BaseType.IsGenericType || scopeParentType.BaseType.GetGenericTypeDefinition() != requiredBaseType))
-				scopeParentType = scopeParentType.BaseType;
+			Type senderType = typeof(IScopeSender);
+			Type scopeSenderType = scopeType;
+			while (scopeSenderType.BaseType != null && senderType.IsAssignableFrom(scopeSenderType.BaseType))
+				scopeSenderType = scopeSenderType.BaseType;
 
 			if (!cachedDeserializers.ContainsKey(scopeType))
 			{
-				cachedDeserializers[scopeType] = new Deserializer(scopeParentType);
+				cachedDeserializers[scopeType] = new Deserializer(scopeSenderType);
 			}
 		}
 
@@ -118,7 +119,7 @@ namespace NetworkScopes
 
 			if (!deserializer.TryGetValue(signalType, out MethodInfo method))
 			{
-				Debug.LogError($"Could not find method with signal type {signalType} in {scopeType.Name}");
+				NSDebug.LogError($"Could not find method with signal type {signalType} in {scopeType.Name}");
 			}
 
 			return method;

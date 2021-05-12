@@ -72,7 +72,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
             }
             catch (Exception e)
             {
-                Debug.LogException(e);
+                NSDebug.LogException(e);
             }
             #endif
         }

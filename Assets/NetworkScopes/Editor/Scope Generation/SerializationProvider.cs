@@ -115,7 +115,7 @@ namespace NetworkScopes.CodeGeneration
 
 			// add it to list of types that need to be serialized
 			if (serializeAttribute != null)
-				serializableTypes.Add(variableType);
+				AddSerializedType(variableType);
 
 			// could not find a native writer? look for an implementor of ISerializable
 			bool typeImplementsSerializable = typeof(ISerializable).IsAssignableFrom(variableType);
@@ -240,7 +240,7 @@ namespace NetworkScopes.CodeGeneration
 
 			// add it to list of types that need to be serialized
 			if (serializeAttribute != null)
-				serializableTypes.Add(variableType);
+				AddSerializedType(variableType);
 
 			// could not find a native writer? look for an implementor of ISerializable
 			bool typeImplementsSerializable = typeof(ISerializable).IsAssignableFrom(variableType);
@@ -259,8 +259,8 @@ namespace NetworkScopes.CodeGeneration
 				// call the deserialize method and read the value into the newly created variable
 				targetMethod.AddMethodCall(variableName, "Deserialize", "reader");
 
-				// add to list of type serializers to be generated
-				serializableTypes.Add(variableType);
+				// add to list of type serializers to be generated - ONLY if it doesn't already implement ISerializable
+				AddSerializedType(variableType);
 				return;
 			}
 
@@ -273,7 +273,7 @@ namespace NetworkScopes.CodeGeneration
 			// name will always be saved with a "_Serialization" suffix
 			// string fileName = $"{serializableType.Name}_Serialization";
 
-			string classPath = FileUtility.FindClassPath(serializableType.Name);
+			string classPath = FileUtility.FindClassPath(serializableType.Name, false);
 			
 			// make sure original class is partial
 			string classText = File.ReadAllText(classPath);
@@ -281,7 +281,7 @@ namespace NetworkScopes.CodeGeneration
 			    !classText.Contains($"partial class {serializableType.Name}"))
 			{
 				classText = classText.Replace($"class {serializableType.Name}", $"partial class {serializableType.Name}");
-				Debug.Log($"Adding partial keyword to the class {serializableType.Name}.");
+				NSDebug.Log($"Adding partial keyword to the class {serializableType.Name}.");
 				File.WriteAllText(classPath, classText);
 			}
 
@@ -300,7 +300,7 @@ namespace NetworkScopes.CodeGeneration
 				
 				// if file already exists, don't write, and add a helpful log message
 				if (File.Exists(path) && File.ReadAllText(path) != newContent)
-					Debug.Log($"Detected a serialization change in {serializableType.Name} and will not generate serializer. Delete the file '{path}' and try again to re-generate it.");
+					NSDebug.Log($"Detected a serialization change in {serializableType.Name} and will not generate serializer. Delete the file '{path}' and try again to re-generate it.");
 				else
 					File.WriteAllText(path, newContent);
 			}
@@ -360,6 +360,15 @@ namespace NetworkScopes.CodeGeneration
 			return members.ToArray();
 		}
 
+		void AddSerializedType(Type variableType)
+		{
+			// skip if class already implements ISerializable
+			if (typeof(ISerializable).IsAssignableFrom(variableType))
+				return;
+			
+			serializableTypes.Add(variableType);
+		}
+
 		public static TypeDefinition GetPromiseType(Type type)
 		{
 			Type mainPromiseType = (type.Namespace == "System") ? typeof(ValuePromise<>) : typeof(ObjectPromise<>);
@@ -382,7 +391,7 @@ namespace NetworkScopes.CodeGeneration
 			_field = field;
 			_property = prop;
 
-			MemberInfo member = field != null ? field : prop;
+			MemberInfo member = field != null ? (MemberInfo)field : prop;
 			
 			serializeAttribute = member.GetCustomAttribute<NetworkPropertyAttribute>();
 		}

@@ -86,15 +86,18 @@ namespace NetworkScopes.CodeGeneration
 
 				if (serverScope.peerType == null)
 					throw new Exception($"[{scopeDefinition.type.Name}] Can not generate scope because peerType is not assigned. Use a type that inherits {nameof(NetworkPeer)}.");
-				if (!serverScope.peerType.IsAssignableTo(typeof(INetworkPeer)))
+				if (!typeof(INetworkPeer).IsAssignableFrom(serverScope.peerType))
 					throw new Exception($"[{scopeDefinition.type.Name}] Can not generate scope because the type {serverScope.peerType} does not inherit {nameof(NetworkPeer)}.");
 				
 				scopeDefinition.baseType = TypeDefinition.MakeGenericType(scopeConcreteBaseType, serverScope.peerType, nestedClassType);
+
+				scopeDefinition.ResolveImportType(serverScope.peerType);
 			}
 			else
 			{
 				scopeDefinition.baseType = TypeDefinition.MakeGenericType(scopeConcreteBaseType, nestedClassType);
 			}
+			
 			scopeDefinition.interfaces.Add(nestedClassType);
 
 			scopeDefinition.nestedClasses.Add(senderInterface);
@@ -115,7 +118,10 @@ namespace NetworkScopes.CodeGeneration
 				// sender method name
 				MethodDefinition senderMethod = new MethodDefinition(method.Name, AccessModifier.Private);
 				senderMethod.Name = "ISender." + senderMethod.Name;
-				senderMethod.Parameters.AddRange(method.GetParameters().Select(p => new ParameterDefinition(p.Name, p.ParameterType)));
+				senderMethod.Parameters.AddRange(method.GetParameters().Select(p =>
+				{
+					return new ParameterDefinition(p.Name, p.ParameterType);
+				}));
 
 				bool isPromiseSender = method.ReturnType != typeof(void);
 
@@ -145,7 +151,7 @@ namespace NetworkScopes.CodeGeneration
 
 				// write parameters one by one as received
 				foreach (ParameterInfo param in method.GetParameters())
-				{
+				{	
 					serializer.AddSerializationCommands(senderMethod.Body, param.Name, param.ParameterType);
 				}
 
@@ -286,7 +292,11 @@ namespace NetworkScopes.CodeGeneration
 
 		public static string GetScopeRootPath(string scopeDefInterfaceName)
 		{
-			string interfacePath = FileUtility.FindInterfacePath(scopeDefInterfaceName);
+			string interfacePath = FileUtility.FindInterfacePath(scopeDefInterfaceName, true);
+
+			if (interfacePath == null)
+				throw new Exception($"Could not find file containing the interface {scopeDefInterfaceName}.");
+			
 			return Path.GetDirectoryName(interfacePath);
 		}
 
@@ -297,9 +307,27 @@ namespace NetworkScopes.CodeGeneration
 			return Path.Combine(path, $"{scopeName}.cs");
 		}
 
-		public string GetScopeScriptPath()
+		public static string GetScopeScriptPath(string typeName, string scopeInterfaceTypeName)
 		{
-			return MakeScopeScriptPath(scopeDefinition.type.Name, scopeInterface.Name);
+			// find existing class
+			string existingClassPath = FileUtility.FindClassPath(typeName, false);
+			
+			// if none found, use the default path ($INTERFACE_PATH/Generated)
+			if (existingClassPath == null)
+				return MakeScopeScriptPath(typeName, scopeInterfaceTypeName);
+
+			return existingClassPath;
+		}
+
+		public string GetAbstractScriptPath()
+		{
+			return GetScopeScriptPath(scopeDefinition.type.Name, scopeInterface.Name);
+		}
+		
+		public string GetConcreteScriptPath()
+		{
+			string concreteTypeName = scopeDefinition.type.Name.Replace("_Abstract", string.Empty);
+			return GetScopeScriptPath(concreteTypeName, scopeInterface.Name);
 		}
 	}
 }

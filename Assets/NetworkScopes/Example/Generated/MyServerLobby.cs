@@ -19,13 +19,13 @@ namespace NetworkScopes.Examples
 
 		protected override bool JoinMatch(bool rankedOnly)
 		{
-			Debug.Log($"Server got 'JoinMatch' rankedOnly={rankedOnly} command.");
+			NSDebug.Log($"Server got 'JoinMatch' rankedOnly={rankedOnly} command.");
 			return !rankedOnly;
 		}
 
 		private MyServerMatch CreateNewMatch()
 		{
-			MyServerMatch match = scopeRegistrar.RegisterScope<MyServerMatch>(1);
+			MyServerMatch match = server.RegisterScope<MyServerMatch>(1);
 			match.fallbackScope = this;
 			match.OnMatchDestroyed += DestroyMatch;
 			matches.Add(match);

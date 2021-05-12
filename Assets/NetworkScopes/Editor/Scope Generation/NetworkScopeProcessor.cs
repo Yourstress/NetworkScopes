@@ -31,7 +31,7 @@ namespace NetworkScopes.CodeGeneration
 				switch (kvp.Value)
 				{
 					case SerializationFailureReason.TypeNotSerializable:
-						Debug.LogWarning(
+						NSDebug.LogWarning(
 							$"The type <b>{kvp.Key.Name}</b> can not be serialized because it does not implement <b>ISerializable</b>. Use the <b>[NetworkSerialize]</b> to generate serialization code or implement <b>ISerializable</b> to manually serialize it.");
 						break;
 					default:
@@ -61,8 +61,6 @@ namespace NetworkScopes.CodeGeneration
 
 		private static void WriteScope(ScopeDefinition scope, bool logOnly)
 		{
-			string scriptWritePath = scope.GetScopeScriptPath();
-
 			// if this is an abstract scope, generate a blank class override if one doesn't already exist
 			if (scope.scopeDefinition.isAbstract)
 			{
@@ -89,17 +87,16 @@ namespace NetworkScopes.CodeGeneration
 					});
 					blankConcreteScope.methods.AddRange(overrideMethods);
 
-					string concreteTypePath = ScopeDefinition.MakeScopeScriptPath(concreteTypeName, scope.scopeInterface.Name);
-
-					if (!File.Exists(concreteTypePath))
-						WriteClass(blankConcreteScope, concreteTypePath, logOnly);
+					// write concrete class
+					WriteClass(blankConcreteScope, scope.GetConcreteScriptPath(), false, logOnly);
 				}
 			}
 
-			WriteClass(scope.scopeDefinition, scriptWritePath, logOnly);
+			// write abstract class
+			WriteClass(scope.scopeDefinition, scope.GetAbstractScriptPath(), true, logOnly);
 		}
 
-		private static void WriteClass(ClassDefinition classDef, string path, bool logOnly)
+		private static void WriteClass(ClassDefinition classDef, string path, bool overwriteIfExists, bool logOnly)
 		{
 			ScriptWriter writer = classDef.ToScriptWriter();
 
@@ -109,20 +106,21 @@ namespace NetworkScopes.CodeGeneration
 				writer.WriteAt(0, classDef.type.Name+Environment.NewLine);
 
 				
-				Debug.Log($"Writing class {classDef.type.Name} to {path}");
-				Debug.Log(writer.ToString());
+				NSDebug.Log($"Writing class {classDef.type.Name} to {path}");
+				NSDebug.Log(writer.ToString());
 				
 			}
 			else
 			{
-				File.WriteAllText(path, writer.ToString());
+				if (overwriteIfExists || !File.Exists(path))
+					File.WriteAllText(path, writer.ToString());
 			}
 		}
 
 		#if UNITY_EDITOR
-		private const string menuItem_AutoGenScopes = "Tools/Network Scopes/Auto Generate Scope Classes";
-		private const string menuItem_GenerateScopes = "Tools/Network Scopes/Generate Scopes";
-		private const string menuItem_LogScopes = "Tools/Network Scopes/Generate Scopes (Log only)";
+		private const string menuItem_AutoGenScopes = "Tools/Network Scopes X/Auto Generate Scope Classes";
+		private const string menuItem_GenerateScopes = "Tools/Network Scopes X/Generate Scopes";
+		private const string menuItem_LogScopes = "Tools/Network Scopes X/Generate Scopes (Log only)";
 		
 		[MenuItem(menuItem_AutoGenScopes, false, 500)]
 		static void Menu_AutoGenerateScopes()

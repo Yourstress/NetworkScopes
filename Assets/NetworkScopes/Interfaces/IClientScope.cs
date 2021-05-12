@@ -1,7 +1,9 @@
 ﻿
+using System;
+
 namespace NetworkScopes
 {
-	public interface IClientScope : IBaseScope
+	public interface IClientScope : IBaseScope, IDisposable
 	{
 		ScopeIdentifier scopeIdentifier { get; }
 		ScopeChannel channel { get; }

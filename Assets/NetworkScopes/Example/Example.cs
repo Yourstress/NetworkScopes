@@ -98,9 +98,9 @@ namespace NetworkScopes.Examples
                         ("Generate", () => NetworkScopeProcessor.GenerateNetworkScopes(false))
                     };
                     
-                    if (clientLobby.isActive)
+                    if (clientLobby.IsActive)
                         DrawCommands(lobbyCommands);
-                    else if (clientMatch.isActive)
+                    else if (clientMatch.IsActive)
                         DrawCommands(matchCommands);
                     
                     return Task.Delay(200);
@@ -131,6 +131,6 @@ namespace NetworkScopes.Examples
             }
         }
         
-        static void Log(string str) => Debug.Log(str);
+        static void Log(string str) => NSDebug.Log(str);
     }
 }

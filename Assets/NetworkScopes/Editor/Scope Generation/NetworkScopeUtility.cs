@@ -30,7 +30,7 @@ namespace NetworkScopes.CodeGeneration
 				// validate name
 				if (t.Name[0] != 'I')
 				{
-					Debug.LogError($"The scope definition <color=red>{t.Name}</color> must be renamed to I{t.Name}.");
+					NSDebug.LogError($"The scope definition <color=red>{t.Name}</color> must be renamed to I{t.Name}.");
 					continue;
 				}
 

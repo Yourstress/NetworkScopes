@@ -6,39 +6,6 @@ using Microsoft.CSharp;
 
 namespace NetworkScopes.CodeGeneration
 {
-	public static class SignalUtility
-	{
-		public static string GetReadableName(this Type type)
-		{
-			return GetReadableTypeName(type.Name);
-		}
-
-		public static string GetReadableTypeName(string typeName)
-		{
-			switch (typeName)
-			{
-				case "Object": return "object";
-				case "String": return "string";
-				case "Boolean": return "bool";
-				case "Byte": return "byte";
-				case "Char": return "char";
-				case "Decimal": return "decimal";
-				case "Double": return "double";
-				case "Int16": return "short";
-				case "Int32": return "int";
-				case "Int64": return "long";
-				case "SByte": return "sbyte";
-				case "Single": return "float";
-				case "UInt16": return "ushort";
-				case "UInt32": return "uint";
-				case "UInt64": return "ulong";
-				case "Void": return "void";
-				default:
-					return typeName;
-			}
-		}
-	}
-
 	/// <summary>
 	/// Finds a method in ISignalReader that reads the specified type.
 	/// </summary>
@@ -55,7 +22,7 @@ namespace NetworkScopes.CodeGeneration
 		{
 			if (deserializationOptions == DeserializationOptions.AllocateVariable)
 			{
-				string cast = IsEnum ? $"({type.Name})" : "";
+				string cast = IsEnum ? $"({type.GetReadableName()})" : "";
 				targetMethod.AddMethodCallWithAssignment(variableName, type.GetReadableName(), cast+"reader", method.Name);
 			}
 			else if (deserializationOptions == DeserializationOptions.DontAllocateVariable)

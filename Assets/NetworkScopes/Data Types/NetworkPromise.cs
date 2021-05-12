@@ -51,7 +51,7 @@ namespace NetworkScopes
             while (valueId == lastValueId && DateTime.Now < cutoffTime);
             
             if (DateTime.Now >= cutoffTime)
-                Debug.LogError("Time expired!");
+                NSDebug.LogError("Time expired!");
             
             return lastValue;
         }
@@ -67,7 +67,7 @@ namespace NetworkScopes
             if (_onReceivePromise != null)
                 _onReceivePromise(value);
             else
-                Debug.Log("Received unhandled promise");
+                NSDebug.Log("Received unhandled promise");
         }
 
         public void ContinueWith(Action<T> onReceivePromise)

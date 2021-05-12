@@ -36,13 +36,22 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
             {
                 DidFailToConnect();
 				
-                Debug.Log($"Cloud not connect. {e.Message}");
+                NSDebug.Log($"Cloud not connect. {e.Message}");
             }
         }
 
         protected override void DisconnectInternal()
         {
             _netClient.DisconnectAll();
+        }
+
+        public override void Dispose()
+        {
+            _netClient?.DisconnectAll();
+            _netClient = null;
+
+            dispatcher?.DestroyDispatcher();
+            dispatcher = null;
         }
 
         public override ISignalWriter CreateSignal(short channelId)
@@ -64,12 +73,12 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
         void INetEventListener.OnPeerDisconnected(NetPeer peer, DisconnectInfo disconnectInfo)
         {
             WillDisconnect();
-            DidDisconnect((byte)disconnectInfo.Reason);
+            DidDisconnect();
         }
 
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
-            Debug.LogNetworkError(endPoint, socketError);
+            NSDebug.LogNetworkError(endPoint, socketError);
         }
 
         void INetEventListener.OnNetworkReceive(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
@@ -80,7 +89,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
 
         void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
-            Debug.LogUnconnectedMessage(remoteEndPoint, reader, messageType);
+            NSDebug.LogUnconnectedMessage(remoteEndPoint, reader, messageType);
         }
 
         void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency)
@@ -90,7 +99,7 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
 
         void INetEventListener.OnConnectionRequest(ConnectionRequest request)
         {
-            Debug.LogError("Client cannot request connections.");
+            NSDebug.LogError("Client cannot request connections.");
         }
         #endregion
 

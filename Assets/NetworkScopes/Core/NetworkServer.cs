@@ -1,12 +1,10 @@
 	
 using System;
 using System.Collections.Generic;
-using NetworkScopes.ServiceProviders;
-using NetworkScopes.ServiceProviders.LiteNetLib;
 
 namespace NetworkScopes
 {
-	public abstract class NetworkServer<TPeer> : INetworkServer where TPeer : INetworkPeer
+	public abstract class NetworkServer<TPeer> : INetworkServer<TPeer> where TPeer : INetworkPeer
 	{
 		// IServerProvider
 		public abstract bool IsListening { get; }
@@ -36,7 +34,7 @@ namespace NetworkScopes
 			return newScope;
 		}
 		
-		public void RegisterScope<TServerScope>(TServerScope scope, byte scopeIdentifier) where TServerScope : IServerScope
+		public TServerScope RegisterScope<TServerScope>(TServerScope scope, byte scopeIdentifier) where TServerScope : IServerScope
 		{
 			// TODO: instead of writing channel as first short in the packet, use LiteNetLib's channel option when sending
 			scope.InitializeServerScope(this, scopeIdentifier, channelGenerator);
@@ -45,14 +43,37 @@ namespace NetworkScopes
 			
 			if (defaultScope == null)
 				defaultScope = scope;
+
+			return scope;
 		}
 
 		public void UnregisterScope<TServerScope>(TServerScope scope) where TServerScope : IServerScope
 		{
-			channelGenerator.DeallocateValue(scope.channel);
+			// don't allow unregistering default scope
+			if (defaultScope == (IServerScope)scope)
+				throw new Exception("Failed to unregister Scope because it is the default Scope");
 
-			if (!registeredScopes.Remove(scope.channel))
-				throw new Exception(string.Format("The scope {0} is not registered.", scope));
+			// remove from registered scopes
+			if (registeredScopes.Remove(scope.channel))
+			{
+				// make sure to clean-up before letting go of this scope
+				scope.Dispose();
+			}
+			else
+			{
+				throw new Exception($"Failed to remove the Scope {scope.GetType()} because it was not registered {GetType().Name}.");
+			}
+		}
+
+		public TPeer FindPeer(Func<TPeer, bool> peerSelector)
+		{
+			foreach (TPeer peer in Peers)
+			{
+				if (peerSelector(peer))
+					return peer;
+			}
+
+			return default;
 		}
 
 		protected void PeerConnected(INetworkPeer peer)
@@ -70,7 +91,8 @@ namespace NetworkScopes
 
 		protected void PeerDisconnected(INetworkPeer peer)
 		{
-			peer.TriggerDisconnectEvent();
+			// force the peer to disconnect across all scopes, as well clean-up within the Master (Peer_OnDisconnect)
+			peer.ForceDisconnect(false);
 
 			PeerCount--;
 
@@ -88,7 +110,7 @@ namespace NetworkScopes
 			}
 			else
 			{
-				Debug.LogWarning($"Server could not process signal on unknown channel {targetChannel}.");
+				NSDebug.LogWarning($"Server could not process signal on unknown channel {targetChannel}.");
 			}
 		}
 	}

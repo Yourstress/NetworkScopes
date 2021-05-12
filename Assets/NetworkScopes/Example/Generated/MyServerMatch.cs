@@ -19,18 +19,18 @@ namespace NetworkScopes.Examples
 
 		protected override void Test1()
 		{
-			Debug.Log($"Server received Test1");
+			NSDebug.Log($"Server received Test1");
 		}
 
 		protected override void Test2(string str)
 		{
-			Debug.Log($"Server received Test2 " + str);
+			NSDebug.Log($"Server received Test2 " + str);
 		}
 
 		protected override int Test3()
 		{
 			int value = (new Random().Next() % 100) + 1;
-			Debug.Log($"Server received Test3 - sending back random number between 1-100: " + value);
+			NSDebug.Log($"Server received Test3 - sending back random number between 1-100: " + value);
 			return value;
 		}
 
@@ -41,7 +41,7 @@ namespace NetworkScopes.Examples
 
 		void DestroyScope()
 		{
-			scopeRegistrar.UnregisterScope(this);
+			server.UnregisterScope(this);
 			OnMatchDestroyed(this);
 		}
 	}

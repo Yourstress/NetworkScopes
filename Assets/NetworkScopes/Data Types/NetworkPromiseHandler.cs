@@ -22,7 +22,7 @@ public class NetworkPromiseHandler
         }
         else
         {
-            Debug.Log($"Could not call previously registered promise with id {promiseID}.");
+            NSDebug.Log($"Could not call previously registered promise with id {promiseID}.");
         }
     }
 

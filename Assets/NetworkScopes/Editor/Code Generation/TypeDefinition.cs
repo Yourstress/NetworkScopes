@@ -18,7 +18,7 @@ namespace NetworkScopes.CodeGeneration
 				SetGenericType(type.GetGenericArguments().Select(arg => arg.GetReadableName()).ToArray());
 			else if (type.IsArray)
 			{
-				Name = SignalUtility.GetReadableTypeName(Name.Replace("[]", string.Empty)) + "[]";
+				Name = TypeUtility.GetReadableTypeName(Name.Replace("[]", string.Empty)) + "[]";
 			}
 		}
 

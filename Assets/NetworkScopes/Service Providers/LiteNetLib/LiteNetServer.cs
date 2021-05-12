@@ -85,15 +85,15 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
                 // trigger peer disconnected event
                 PeerDisconnected(peer);
             }
-            else if (Debug.logFailedPeerRemovals)
+            else if (NSDebug.logFailedPeerRemovals)
             {
-                Debug.Log($"Failed to remove peer {netPeer.EndPoint.Address}");
+                NSDebug.Log($"Failed to remove peer {netPeer.EndPoint.Address}");
             }
         }
 
         void INetEventListener.OnNetworkError(IPEndPoint endPoint, SocketError socketError)
         {
-            Debug.LogNetworkError(endPoint, socketError);
+            NSDebug.LogNetworkError(endPoint, socketError);
         }
 
         void INetEventListener.OnNetworkReceive(NetPeer netPeer, NetPacketReader reader, DeliveryMethod deliveryMethod)
@@ -105,13 +105,13 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
             }
             else
             {
-                Debug.LogError("Received message from unknown peer.");
+                NSDebug.LogError("Received message from unknown peer.");
             }
         }
 
         void INetEventListener.OnNetworkReceiveUnconnected(IPEndPoint remoteEndPoint, NetPacketReader reader, UnconnectedMessageType messageType)
         {
-            Debug.LogUnconnectedMessage(remoteEndPoint, reader, messageType);
+            NSDebug.LogUnconnectedMessage(remoteEndPoint, reader, messageType);
         }
 
         void INetEventListener.OnNetworkLatencyUpdate(NetPeer peer, int latency)

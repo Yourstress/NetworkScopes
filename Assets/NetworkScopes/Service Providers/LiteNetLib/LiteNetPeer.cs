@@ -6,9 +6,11 @@ namespace NetworkScopes.ServiceProviders.LiteNetLib
     public class LiteNetPeer : NetworkPeer
     {
         public NetPeer _peer;
-        
+
+        public override bool IsConnected => _peer.ConnectionState == ConnectionState.Connected;
+
         public override string ipAddress => _peer.EndPoint.Address.ToString();
-        
+
         public void InitializeNetPeer(NetPeer peer)
         {
             if (_peer != null)

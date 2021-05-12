@@ -5,11 +5,16 @@ namespace NetworkScopes
     public interface INetworkPeer
     {
         string ipAddress { get; }
-        bool isDestroyed { get; }
+        bool IsDestroyed { get; }
 
         void Disconnect();
-        void TriggerDisconnectEvent();
         void SendSignal(ISignalWriter signal);
+        
+        void ForceDisconnect(bool closeConnection);
+        void DisconnectWithMessage(byte disconnectMsgIdentifier);
+        void SoftDisconnect();
+
+        void Redirect(string hostname, int port);
 
         event Action<INetworkPeer> OnDisconnect;
     }
