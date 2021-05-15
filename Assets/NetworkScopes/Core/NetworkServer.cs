@@ -25,6 +25,8 @@ namespace NetworkScopes
 
 		public IServerScope defaultScope { get; set; }
 
+		public int RegisteredScopeCount => registeredScopes.Count;
+
 		private readonly ChannelGenerator channelGenerator = new ChannelGenerator(short.MinValue, short.MaxValue);
 
 		public TServerScope RegisterScope<TServerScope>(byte scopeIdentifier) where TServerScope : IServerScope, new()

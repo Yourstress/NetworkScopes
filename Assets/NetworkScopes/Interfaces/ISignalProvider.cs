@@ -13,6 +13,8 @@ namespace NetworkScopes
 	public interface INetworkServer : IServerProvider, IServerScopeProvider
 	{
 		IServerScope defaultScope { get; set; }
+		
+		int RegisteredScopeCount { get; } 
 	}
 	public interface INetworkClient : IClientProvider, IScopeRegistrar
 	{ }
