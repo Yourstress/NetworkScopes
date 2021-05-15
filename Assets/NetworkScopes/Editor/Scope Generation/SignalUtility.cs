@@ -18,14 +18,14 @@ namespace NetworkScopes.CodeGeneration
 				.FirstOrDefault(m => m.ReturnType == underlyingType);
 		}
 
-		public void AddMethodCall(MethodBody targetMethod, string variableName, DeserializationOptions deserializationOptions)
+		public void AddMethodCall(MethodBody targetMethod, string variableName, DeserializationOption deserializationOption)
 		{
-			if (deserializationOptions == DeserializationOptions.AllocateVariable)
+			if (deserializationOption == DeserializationOption.AllocateVariable)
 			{
 				string cast = IsEnum ? $"({type.GetReadableName()})" : "";
 				targetMethod.AddMethodCallWithAssignment(variableName, type.GetReadableName(), cast+"reader", method.Name);
 			}
-			else if (deserializationOptions == DeserializationOptions.DontAllocateVariable)
+			else if (deserializationOption == DeserializationOption.DontAllocateVariable)
 				targetMethod.AddMethodCallWithAssignment(variableName, "reader", method.Name);
 			else
 				throw new Exception("Undefined DeserializaOption");

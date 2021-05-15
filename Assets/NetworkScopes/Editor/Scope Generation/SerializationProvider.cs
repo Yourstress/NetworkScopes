@@ -15,7 +15,7 @@ namespace NetworkScopes.CodeGeneration
 		TypeNotSerializable,
 	}
 
-	public enum DeserializationOptions
+	public enum DeserializationOption
 	{
 		AllocateVariable,
 		DontAllocateVariable,
@@ -38,18 +38,21 @@ namespace NetworkScopes.CodeGeneration
 			if (variableType.IsArray || (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(List<>)))
 			{
 				Type elementType = variableType.IsArray ? variableType.GetElementType() : variableType.GetGenericArguments()[0];
+				string elemTypeName = elementType.GetReadableName();
 
 				// if it's a serializable type, there's a one liner method to serialize it
 				if (typeof(ISerializable).IsAssignableFrom(elementType) || serializableTypes.Contains(elementType))
 				{
+					// string methodName = variableType.IsArray ? $"WriteObjectArray<{elemTypeName}>" : $"WriteObjectList<{elemTypeName}>";
+
 					if (variableType.IsArray)
-						targetMethod.AddMethodCall("writer", string.Format("WriteObjectArray<{0}>", elementType.GetReadableName()), variableName);
+						targetMethod.AddMethodCall("writer", $"WriteObjectArray<{elemTypeName}>", variableName);
 					else
 					{
 						// import the needed namespace for generic List type
 						targetMethod.Import(typeof(List<>).Namespace);
 
-						targetMethod.AddMethodCall("writer", string.Format("WriteObjectList<{0}>", elementType.GetReadableName()), variableName);
+						targetMethod.AddMethodCall("writer", $"WriteObjectList<{elemTypeName}>", variableName);
 					}
 				}
 				// otherwise, serialize it inline
@@ -63,7 +66,7 @@ namespace NetworkScopes.CodeGeneration
 					// nested-serialize everything in the array
 					string loopVarName = variableName + "_x";
 					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
-					AddSerializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), elementType);
+					AddSerializationCommands(targetMethod, $"{variableName}[{loopVarName}]", elementType);
 					targetMethod.EndLoop();
 				}
 				return;
@@ -79,7 +82,7 @@ namespace NetworkScopes.CodeGeneration
 				if (typeof(ISerializable).IsAssignableFrom(keyElementType) || serializableTypes.Contains(keyElementType) &&
 				    typeof(ISerializable).IsAssignableFrom(valElementType) || serializableTypes.Contains(valElementType))
 				{
-					targetMethod.AddMethodCall("writer", string.Format("WriteObjectDictionary<{0},{1}>", keyElementType.GetReadableName(), valElementType.GetReadableName()), variableName);
+					targetMethod.AddMethodCall("writer", $"WriteObjectDictionary<{keyElementType.GetReadableName()},{valElementType.GetReadableName()}>", variableName);
 				}
 				// otherwise, serialize it inline
 				else
@@ -131,28 +134,24 @@ namespace NetworkScopes.CodeGeneration
 			failedTypes[variableType] = SerializationFailureReason.TypeNotSerializable;
 		}
 
-		public void AddDeserializationCommands(MethodBody targetMethod, string variableName, Type variableType, DeserializationOptions deserializationOptions = DeserializationOptions.AllocateVariable)
+		public void AddDeserializationCommands(MethodBody targetMethod, string variableName, Type variableType, DeserializationOption deserializationOption = DeserializationOption.AllocateVariable)
 		{
 			// if this is an array, generate a for-loop to deserialize it and every item in it
 			if (variableType.IsArray || (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(List<>)))
 			{
 				Type elementType = variableType.IsArray ? variableType.GetElementType() : variableType.GetGenericArguments()[0];
+				string elemTypeName = elementType.GetReadableName();
 
 				// if it's a serializable type, there's a one liner method to serialize it
 				if (typeof(ISerializable).IsAssignableFrom(elementType) || serializableTypes.Contains(elementType))
 				{
-					// CODE: T[] var = reader.ReadObjectArray<T>();
-					if (variableType.IsArray)
-						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("{0}[]", elementType.GetReadableName()), "reader",
-							string.Format("ReadObjectArray<{0}>", elementType.GetReadableName()));
-					// CODE: List<T> var = reader.ReadObjectList<T>();
-					else
-					{
-						// import the needed namespace for generic List type
-						targetMethod.Import(typeof(List<>).Namespace);
+					string methodName = variableType.IsArray ? $"ReadObjectArray<{elemTypeName}>" : $"ReadObjectList<{elemTypeName}>";
 
-						targetMethod.AddMethodCallWithAssignment(variableName, string.Format("List<{0}>", elementType.GetReadableName()), "reader", string.Format("ReadObjectList<{0}>", elementType.GetReadableName()));
-					}
+					targetMethod.AddMethodCallWithAssignment(variableName, "reader", methodName, deserializationOption, elemTypeName);
+					
+					// import the needed namespace for generic List type
+					if (variableType.IsGenericType && variableType.GetGenericTypeDefinition() == typeof(List<>))
+						targetMethod.Import(typeof(List<>).Namespace);
 				}
 				// otherwise, serialize it inline
 				else
@@ -166,7 +165,7 @@ namespace NetworkScopes.CodeGeneration
 					// CODE: T[] var = new T[length];
 					if (variableType.IsArray)
 					{
-						targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}[{1}]", elementType.GetReadableName(), lengthVarName));
+						targetMethod.AddAssignmentInstruction(variableType, variableName, $"new {elementType.GetReadableName()}[{lengthVarName}]", deserializationOption);
 					}
 					// CODE: List<T> var = new List<T>[length];
 					else
@@ -176,13 +175,13 @@ namespace NetworkScopes.CodeGeneration
 
 						TypeDefinition genericVariableType = TypeDefinition.MakeGenericType(variableType, elementType);
 
-						targetMethod.AddAssignmentInstruction(genericVariableType, variableName, string.Format("new List<{0}>({1})", elementType.GetReadableName(), lengthVarName));
+						targetMethod.AddAssignmentInstruction(genericVariableType, variableName, $"new List<{elementType.GetReadableName()}>({lengthVarName})", deserializationOption);
 					}
 
 					// CODE: for loop and nested serialization
 					string loopVarName = variableName + "_x";
 					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
-					AddDeserializationCommands(targetMethod, string.Format("{0}[{1}]", variableName, loopVarName), elementType, DeserializationOptions.DontAllocateVariable);
+					AddDeserializationCommands(targetMethod, $"{variableName}[{loopVarName}]", elementType, DeserializationOption.DontAllocateVariable);
 					targetMethod.EndLoop();
 				}
 
@@ -199,8 +198,8 @@ namespace NetworkScopes.CodeGeneration
 				if (typeof(ISerializable).IsAssignableFrom(keyElementType) || serializableTypes.Contains(keyElementType) &&
 				    typeof(ISerializable).IsAssignableFrom(valElementType) || serializableTypes.Contains(valElementType))
 				{
-					string types = string.Format("{0},{1}", keyElementType.GetReadableName(), valElementType.GetReadableName());
-					targetMethod.AddMethodCallWithAssignment(variableName, string.Format("Dictionary<{0}>", types), "reader", string.Format("ReadObjectDictionary<{0}>", types));
+					string types = $"{keyElementType.GetReadableName()},{valElementType.GetReadableName()}";
+					targetMethod.AddMethodCallWithAssignment(variableName, $"Dictionary<{types}>", "reader", $"ReadObjectDictionary<{types}>");
 				}
 				// otherwise, serialize it inline
 				else
@@ -213,12 +212,12 @@ namespace NetworkScopes.CodeGeneration
 					AddDeserializationCommands(targetMethod, lengthVarName, typeof(int));
 
 					TypeDefinition genericVariableName = TypeDefinition.MakeGenericType(variableType, keyElementType, valElementType);
-					targetMethod.AddAssignmentInstruction(genericVariableName, variableName, string.Format("new Dictionary<{0},{1}>({2})", keyElementType.GetReadableName(), valElementType.GetReadableName(), lengthVarName));
+					targetMethod.AddAssignmentInstruction(genericVariableName, variableName, $"new Dictionary<{keyElementType.GetReadableName()},{valElementType.GetReadableName()}>({lengthVarName})");
 
 					// CODE: foreach loop and nested serialization
 					targetMethod.BeginForIntLoop(loopVarName, "0", lengthVarName);
-					AddDeserializationCommands(targetMethod, "key", keyElementType, DeserializationOptions.AllocateVariable);
-					AddDeserializationCommands(targetMethod, "val", valElementType, DeserializationOptions.AllocateVariable);
+					AddDeserializationCommands(targetMethod, "key", keyElementType, DeserializationOption.AllocateVariable);
+					AddDeserializationCommands(targetMethod, "val", valElementType, DeserializationOption.AllocateVariable);
 					targetMethod.AddAssignmentInstruction("dic[key]", "val");
 					targetMethod.EndLoop();
 				}
@@ -231,7 +230,7 @@ namespace NetworkScopes.CodeGeneration
 			// if it's found, immediately write the command to deserialize it from the signal reader
 			if (paramReadMethod.IsAvailable)
 			{
-				paramReadMethod.AddMethodCall(targetMethod, variableName, deserializationOptions);
+				paramReadMethod.AddMethodCall(targetMethod, variableName, deserializationOption);
 				return;
 			}
 
@@ -249,10 +248,10 @@ namespace NetworkScopes.CodeGeneration
 			if (typeImplementsSerializable || serializeAttribute != null)
 			{
 				// create the object to serialize the data into
-				if (deserializationOptions == DeserializationOptions.AllocateVariable)
-					targetMethod.AddAssignmentInstruction(variableType, variableName, string.Format("new {0}()", variableType.Name));
-				else if (deserializationOptions == DeserializationOptions.DontAllocateVariable)
-					targetMethod.AddAssignmentInstruction(variableName, string.Format("new {0}()", variableType));
+				if (deserializationOption == DeserializationOption.AllocateVariable)
+					targetMethod.AddAssignmentInstruction(variableType, variableName, $"new {variableType.Name}()");
+				else if (deserializationOption == DeserializationOption.DontAllocateVariable)
+					targetMethod.AddAssignmentInstruction(variableName, $"new {variableType}()");
 				else
 					throw new Exception("Undefined DeserializationOption.");
 
@@ -331,7 +330,7 @@ namespace NetworkScopes.CodeGeneration
 
 			foreach (SerializedMember member in serializeMembers)
 			{
-				AddDeserializationCommands(readerMethod.Body, member.name, member.type, DeserializationOptions.DontAllocateVariable);
+				AddDeserializationCommands(readerMethod.Body, member.name, member.type, DeserializationOption.DontAllocateVariable);
 			}
 
 			typeSerializer.methods.Add(writerMethod);
@@ -343,13 +342,13 @@ namespace NetworkScopes.CodeGeneration
 		private static SerializedMember[] GetSerializationMembers(Type serializableType)
 		{
 			List<SerializedMember> members = new List<SerializedMember>();
+
+			BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
 			
 			// get all fields and properties
-			members.AddRange(serializableType.GetFields().Select(f => new SerializedMember(f)));
-			members.AddRange(serializableType.GetProperties().Select(f => new SerializedMember(f)));
-			
-			
-			
+			members.AddRange(serializableType.GetFields(bindingFlags).Select(f => new SerializedMember(f)));
+			members.AddRange(serializableType.GetProperties(bindingFlags).Select(f => new SerializedMember(f)));
+
 			// sort and return them
 			members = members
 				.OrderBy(p => p.serializeAttribute == null)

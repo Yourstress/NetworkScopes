@@ -25,6 +25,14 @@ namespace NetworkScopes.CodeGeneration
 			AddRawInstruction($"{type.Name} {varName} = {assignmentValue};");
 		}
 
+		public void AddAssignmentInstruction(TypeDefinition type, string varName, string assignmentValue, DeserializationOption deserializationOption)
+		{
+			if (deserializationOption == DeserializationOption.AllocateVariable)
+				AddAssignmentInstruction(type, varName, assignmentValue);
+			else
+				AddAssignmentInstruction(varName, assignmentValue);
+		}
+
 		/// <summary>
 		/// [VarName] = [Value];
 		/// </summary>
@@ -44,17 +52,34 @@ namespace NetworkScopes.CodeGeneration
 		/// <summary>
 		/// [AssignmentType] [AssignmentName] = [ObjectName].[MethodName]([Parameters...]);
 		/// </summary>
-		public void AddMethodCallWithAssignment(string assignmentName, string assignmentType, string objectName, String methodName/*, params string[] parameters*/)
+		public void AddMethodCallWithAssignment(string assignmentName, string assignmentType, string objectName, string methodName)
 		{
-			AddRawInstruction($"{assignmentType} {assignmentName} = {objectName}.{methodName}();");
+			if (assignmentType == null)
+				AddMethodCallWithAssignment(assignmentName, objectName, methodName);
+			else
+				AddRawInstruction($"{assignmentType} {assignmentName} = {objectName}.{methodName}();");
 		}
 
 		/// <summary>
 		/// [AssignmentName] = [ObjectName].[MethodName]([Parameters...]);
 		/// </summary>
-		public void AddMethodCallWithAssignment(string assignmentName, string objectName, String methodName/*, params string[] parameters*/)
+		public void AddMethodCallWithAssignment(string assignmentName, string objectName, string methodName)
 		{
 			AddRawInstruction($"{assignmentName} = {objectName}.{methodName}();");
+		}
+		
+		public void AddMethodCallWithAssignment(string assignmentName, string objectName, string methodName, DeserializationOption deserializationOption, string optionalTypeName)
+		{
+			if (deserializationOption == DeserializationOption.AllocateVariable)
+			{
+				AddMethodCallWithAssignment(assignmentName, objectName, methodName);
+			}
+			else if (deserializationOption == DeserializationOption.DontAllocateVariable)
+			{
+				AddMethodCallWithAssignment(assignmentName, optionalTypeName, objectName, methodName);
+			}
+			else
+				throw new Exception($"Undefined {nameof(DeserializationOption)}={deserializationOption}");
 		}
 
 		/// <summary>

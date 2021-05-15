@@ -14,7 +14,7 @@ namespace NetworkScopes
 	{
 		IServerScope defaultScope { get; set; }
 		
-		int RegisteredScopeCount { get; } 
+		int RegisteredScopeCount { get; }
 	}
 	public interface INetworkClient : IClientProvider, IScopeRegistrar
 	{ }
