@@ -50,7 +50,7 @@ namespace NetworkScopes.CodeGeneration
                 case "UInt32": return "uint";
                 case "UInt64": return "ulong";
                 case "Void": return "void";
-                default: return null;
+                default: return typeName;
             }
         }
     }

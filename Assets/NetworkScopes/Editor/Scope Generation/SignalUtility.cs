@@ -20,13 +20,15 @@ namespace NetworkScopes.CodeGeneration
 
 		public void AddMethodCall(MethodBody targetMethod, string variableName, DeserializationOption deserializationOption)
 		{
+			string cast = IsEnum ? $"({type.GetReadableName()})" : "";
 			if (deserializationOption == DeserializationOption.AllocateVariable)
 			{
-				string cast = IsEnum ? $"({type.GetReadableName()})" : "";
 				targetMethod.AddMethodCallWithAssignment(variableName, type.GetReadableName(), cast+"reader", method.Name);
 			}
 			else if (deserializationOption == DeserializationOption.DontAllocateVariable)
-				targetMethod.AddMethodCallWithAssignment(variableName, "reader", method.Name);
+			{
+				targetMethod.AddMethodCallWithAssignment(variableName, cast+"reader", method.Name);
+			}
 			else
 				throw new Exception("Undefined DeserializaOption");
 		}

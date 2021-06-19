@@ -9,10 +9,19 @@ namespace NetworkScopes.CodeGeneration
 		public string Name;
 		public string Namespace;
 
+		public readonly string ReadableName;
+		public readonly bool IsEnum;
+		public readonly bool IsCollection;
+		
+
 		public TypeDefinition(Type type)
 		{
 			Name = type.GetReadableName();
 			Namespace = type.Namespace;
+
+			ReadableName = $"({type.GetReadableName()})";
+			IsEnum = type.IsEnum;
+			IsCollection = type.IsArray || type.IsList();
 
 			if (type.IsGenericType)
 				SetGenericType(type.GetGenericArguments().Select(arg => arg.GetReadableName()).ToArray());

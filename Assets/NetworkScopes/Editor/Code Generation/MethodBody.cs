@@ -17,14 +17,6 @@ namespace NetworkScopes.CodeGeneration
 			imports.Add(import);
 		}
 
-		/// <summary>
-		/// [Type] [VarName] = [Value];
-		/// </summary>
-		public void AddAssignmentInstruction(TypeDefinition type, string varName, string assignmentValue)
-		{
-			AddRawInstruction($"{type.Name} {varName} = {assignmentValue};");
-		}
-
 		public void AddAssignmentInstruction(TypeDefinition type, string varName, string assignmentValue, DeserializationOption deserializationOption)
 		{
 			if (deserializationOption == DeserializationOption.AllocateVariable)
@@ -32,13 +24,24 @@ namespace NetworkScopes.CodeGeneration
 			else
 				AddAssignmentInstruction(varName, assignmentValue);
 		}
+		
+		/// <summary>
+		/// [Type] [VarName] = [Value];
+		/// </summary>
+		public void AddAssignmentInstruction(TypeDefinition type, string varName, string assignmentValue)
+		{
+			string cast = "";
+			if (type.IsEnum)
+				cast = $"({type.ReadableName})";
+			AddRawInstruction($"{type.Name} {varName} = {cast}{assignmentValue};");
+		}
 
 		/// <summary>
 		/// [VarName] = [Value];
 		/// </summary>
-		public void AddAssignmentInstruction(string varName, string assignmentValue)
+		public void AddAssignmentInstruction(string varName, string assignmentValue, string cast = "")
 		{
-			AddRawInstruction($"{varName} = {assignmentValue};");
+			AddRawInstruction($"{varName} = {cast}{assignmentValue};");
 		}
 
 		/// <summary>
